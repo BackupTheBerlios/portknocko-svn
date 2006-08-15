@@ -46,7 +46,10 @@ static struct list_head *alloc_hashtable(int size) {
         struct list_head *hash = NULL;
         unsigned int i;
 
-        hash = kmalloc(sizeof(struct list_head) * size, GFP_KERNEL);
+        if ((hash = kmalloc(sizeof(struct list_head) * size, GFP_KERNEL)) == NULL) {
+		printk(KERN_ERR MOD "kmalloc() error in alloc_hashtable() function.\n");
+		return 0;
+	}
 
         if (hash) {
                 for (i = 0; i < size; i++) {
