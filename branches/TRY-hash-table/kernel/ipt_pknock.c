@@ -28,9 +28,11 @@ MODULE_LICENSE("GPL");
 
 #define EXPIRATION_TIME 50000 /* in msecs */
 
-#define DEFAULT_RULE_HASH_SIZE 128
+#define DEFAULT_RULE_HASH_SIZE 16
+#define DEFAULT_PEER_HASH_SIZE 64
 
 unsigned int ipt_pknock_rule_htable_size = DEFAULT_RULE_HASH_SIZE;
+unsigned int ipt_pknock_peer_htable_size = DEFAULT_PEER_HASH_SIZE;
 
 struct list_head *rule_hashtable = NULL;
 static DEFINE_SPINLOCK(rule_list_lock);
@@ -112,11 +114,11 @@ static inline void print_list_peer(struct ipt_pknock_rule *rule) {
 	struct peer_status *peer = NULL;
 	u_int32_t ip;
 
-	if (list_empty(&rule->peer_status_head)) return;
+	if (list_empty(&rule->peer_status_head[0])) return;
 	
 	printk(KERN_INFO MOD "(*) %s list peer matching status:\n", rule->rule_name);
 	
-	list_for_each(pos, &rule->peer_status_head) {
+	list_for_each(pos, &rule->peer_status_head[0]) {
 		peer = list_entry(pos, struct peer_status, head);
 		ip = htonl(peer->ip);
 		printk(KERN_INFO MOD "(*) peer: %u.%u.%u.%u - tstamp: %ld\n", 
@@ -181,13 +183,13 @@ static int read_proc(char *buf, char **start, off_t offset, int count, int *eof,
 
 	rule = (struct ipt_pknock_rule *)data;
 
-	if (list_empty(&rule->peer_status_head)) {
+	if (list_empty(&rule->peer_status_head[0])) {
 		spin_unlock_bh(&rule_list_lock);
 		return 0;
 	}
 	max_time = rule->max_time;
 
-	list_for_each(p, &rule->peer_status_head) {
+	list_for_each(p, &rule->peer_status_head[0]) {
 		peer = list_entry(p, struct peer_status, head);
 		
 		status = status_itoa(peer->status);
@@ -240,9 +242,9 @@ static void peer_status_gc(unsigned long r) {
 	struct list_head *pos = NULL, *n = NULL;
 
 	if(timer_pending(&rule->timer) == 0) {
-		if (list_empty(&rule->peer_status_head)) return;
+		if (list_empty(&rule->peer_status_head[0])) return;
 
-		list_for_each_safe(pos, n, &rule->peer_status_head) {
+		list_for_each_safe(pos, n, &rule->peer_status_head[0]) {
 			peer = list_entry(pos, struct peer_status, head);
 
 			if (peer->status == ST_ALLOWED || peer->status == ST_MATCHING) {
@@ -326,7 +328,9 @@ static int add_rule(struct ipt_pknock_info *info) {
 //	rule->timer.data	= (unsigned long)rule;
 //	rule->timer.function 	= peer_status_gc;
 //	add_timer(&rule->timer);
-	INIT_LIST_HEAD(&rule->peer_status_head);
+	
+	//INIT_LIST_HEAD(&rule->peer_status_head);
+	rule->peer_status_head = alloc_hashtable(ipt_pknock_peer_htable_size);
 	
 	if (!(rule->status_proc = create_proc_read_entry(info->rule_name, 0, 
 	proc_net_ipt_pknock, read_proc, rule))) {
@@ -378,8 +382,8 @@ static void remove_rule(struct ipt_pknock_info *info) {
 
 	if (rule != NULL && rule->ref_count == 0) {
 		// If it had added peers matching status.
-		if (!list_empty(&rule->peer_status_head)) {
-			list_for_each_safe(pos, n, &rule->peer_status_head) {
+		if (!list_empty(&rule->peer_status_head[0])) {
+			list_for_each_safe(pos, n, &rule->peer_status_head[0]) {
 				peer = list_entry(pos, struct peer_status, head);
 				if (peer != NULL) {
 #if DEBUG
@@ -431,10 +435,10 @@ static inline struct peer_status * get_peer_status(struct ipt_pknock_rule *rule,
 	struct peer_status *peer = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 	
-	if (list_empty(&rule->peer_status_head)) return NULL;
+	if (list_empty(&rule->peer_status_head[0])) return NULL;
 
 	ip = ntohl(ip);
-	list_for_each_safe(pos, n, &rule->peer_status_head) {
+	list_for_each_safe(pos, n, &rule->peer_status_head[0]) {
 		peer = list_entry(pos, struct peer_status, head);
 		if (peer->ip == ip) return peer;
 	}
@@ -479,7 +483,7 @@ static inline struct peer_status * new_peer_status(u_int32_t ip, u_int8_t proto)
  */
 static inline void add_peer_status(struct peer_status *peer, 
 						struct ipt_pknock_rule *rule) {
-	list_add_tail(&peer->head, &rule->peer_status_head);
+	list_add_tail(&peer->head, &rule->peer_status_head[0]);
 }
 
 /**
@@ -735,9 +739,24 @@ static int set_rule_hashsize(const char *val, struct kernel_param *kp) {
 	ipt_pknock_rule_htable_size = hashsize;
 				
 	return 0;
+}
+
+static int set_peer_hashsize(const char *val, struct kernel_param *kp) {
+        int hashsize;
+	
+        hashsize = simple_strtol(val, NULL, 0);
+        
+	if (!hashsize)
+                return -EINVAL;
+
+	ipt_pknock_peer_htable_size = hashsize;
+				
+	return 0;
 }	
 
 module_param_call(rule_hashsize, set_rule_hashsize, param_get_uint, &ipt_pknock_rule_htable_size, 0600);
+module_param_call(peer_hashsize, set_peer_hashsize, param_get_uint, &ipt_pknock_peer_htable_size, 0600);
+
 
 static int __init init(void) 
 {
