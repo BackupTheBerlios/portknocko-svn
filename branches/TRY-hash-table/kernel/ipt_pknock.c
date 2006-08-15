@@ -34,6 +34,14 @@ struct list_head *rule_hashtable = NULL;
 static DEFINE_SPINLOCK(rule_list_lock);
 static struct proc_dir_entry *proc_net_ipt_pknock = NULL;
 
+static int calc_hash(const char *str, unsigned int len, unsigned int max){
+	int i, total=0;
+	for (i=0; i < len; i++)
+		total += str[i];
+	return total % max;
+}
+
+
 static struct list_head *alloc_hashtable(int size) {
         struct list_head *hash = NULL;
         unsigned int i;
@@ -256,8 +264,10 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 
-	if (!list_empty(&rule_hashtable[0])) {
-		list_for_each_safe(pos, n, &rule_hashtable[0]) {
+	int hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
+	
+	if (!list_empty(&rule_hashtable[hash])) {
+		list_for_each_safe(pos, n, &rule_hashtable[hash]) {
 			rule = list_entry(pos, struct ipt_pknock_rule, head);
 			
 			if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0)
@@ -266,13 +276,6 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
 	}
 
 	return NULL;
-}
-
-static int calc_hash(const char *str, unsigned int len, unsigned int max){
-	int i, total=0;
-	for (i=0; i < len; i++)
-		total += str[i];
-	return total % max;
 }
 
 /**
@@ -286,11 +289,8 @@ static int calc_hash(const char *str, unsigned int len, unsigned int max){
 static int add_rule(struct ipt_pknock_info *info) {
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL;
-	int hash;
-
-//	hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
-
-	hash = 0;
+	
+	int hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
 
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each(pos, &rule_hashtable[hash]) {
@@ -351,9 +351,11 @@ static void remove_rule(struct ipt_pknock_info *info) {
 	struct list_head *pos = NULL, *n = NULL;
 	struct peer_status *peer = NULL;
 	
-	if (list_empty(&rule_hashtable[0])) return;
+	int hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
+	
+	if (list_empty(&rule_hashtable[hash])) return;
 
-	list_for_each(pos, &rule_hashtable[0]) {
+	list_for_each(pos, &rule_hashtable[hash]) {
 		rule = list_entry(pos, struct ipt_pknock_rule, head);
 		// If the rule exists.
 		if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0) {
