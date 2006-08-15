@@ -16,6 +16,7 @@
 #include <linux/list.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>
+#include <linux/vmalloc.h>
 
 #include <linux/netfilter_ipv4/ip_tables.h>
 //#include <linux/netfilter_ipv4/ipt_pknock.h>
@@ -27,9 +28,30 @@ MODULE_LICENSE("GPL");
 
 #define EXPIRATION_TIME 50000 /* in msecs */
 
-static LIST_HEAD(rule_list);
+#define HASH_SIZE 256 
+
+struct list_head *rule_hashtable = NULL;
 static DEFINE_SPINLOCK(rule_list_lock);
 static struct proc_dir_entry *proc_net_ipt_pknock = NULL;
+
+static struct list_head *alloc_hashtable(int size) {
+        struct list_head *hash = NULL;
+        unsigned int i;
+
+        hash = kmalloc(sizeof(struct list_head) * size, GFP_KERNEL);
+
+        if (hash) {
+                for (i = 0; i < size; i++) {
+                        INIT_LIST_HEAD(&hash[i]);
+		}
+#if DEBUG
+		printk(KERN_DEBUG MOD "%d buckets malloced. \n", size);
+#endif				
+	}
+
+        return hash;
+}
+
 
 #if DEBUG
 /**
@@ -234,15 +256,23 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 
-	if (!list_empty(&rule_list)) {
-		list_for_each_safe(pos, n, &rule_list) {
+	if (!list_empty(&rule_hashtable[0])) {
+		list_for_each_safe(pos, n, &rule_hashtable[0]) {
 			rule = list_entry(pos, struct ipt_pknock_rule, head);
 			
 			if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0)
 				return rule;
 		}		
 	}
+
 	return NULL;
+}
+
+static int calc_hash(const char *str, unsigned int len, unsigned int max){
+	int i, total=0;
+	for (i=0; i < len; i++)
+		total += str[i];
+	return total % max;
 }
 
 /**
@@ -256,11 +286,16 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
 static int add_rule(struct ipt_pknock_info *info) {
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL;
+	int hash;
 
-	if (!list_empty(&rule_list)) {
-		list_for_each(pos, &rule_list) {
+//	hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
+
+	hash = 0;
+
+	if (!list_empty(&rule_hashtable[hash])) {
+		list_for_each(pos, &rule_hashtable[hash]) {
 			rule = list_entry(pos, struct ipt_pknock_rule, head);
-			/* If the rule exists. */
+			// If the rule exists.
 			if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0) {
 				rule->ref_count++;
 #if DEBUG
@@ -271,7 +306,7 @@ static int add_rule(struct ipt_pknock_info *info) {
 			}
 		}
 	}
-	/* If it doesn't exist. */
+	// If it doesn't exist.
 	if ((rule = (struct ipt_pknock_rule *)kmalloc(sizeof (*rule), GFP_KERNEL)) == NULL) {
 		printk(KERN_ERR MOD "kmalloc() error in add_rule() function.\n");
 		return 0;
@@ -295,11 +330,12 @@ static int add_rule(struct ipt_pknock_info *info) {
 		return 0;
 	}
 
-	list_add_tail(&rule->head, &rule_list);
+	list_add_tail(&rule->head, &rule_hashtable[hash]);
 #if DEBUG
 	printk(KERN_INFO MOD "(A) rule_name: %s - created.\n", rule->rule_name);
 #endif	
 	return 1;
+	
 }
 
 
@@ -315,11 +351,11 @@ static void remove_rule(struct ipt_pknock_info *info) {
 	struct list_head *pos = NULL, *n = NULL;
 	struct peer_status *peer = NULL;
 	
-	if (list_empty(&rule_list)) return;
+	if (list_empty(&rule_hashtable[0])) return;
 
-	list_for_each(pos, &rule_list) {
+	list_for_each(pos, &rule_hashtable[0]) {
 		rule = list_entry(pos, struct ipt_pknock_rule, head);
-		/* If the rule exists. */
+		// If the rule exists.
 		if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0) {
 			rule->ref_count--;
 #if DEBUG
@@ -334,7 +370,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
 	}
 
 	if (rule != NULL && rule->ref_count == 0) {
-		/* If it had added peers matching status. */
+		// If it had added peers matching status.
 		if (!list_empty(&rule->peer_status_head)) {
 			list_for_each_safe(pos, n, &rule->peer_status_head) {
 				peer = list_entry(pos, struct peer_status, head);
@@ -359,6 +395,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
 		list_del(&rule->head);
 		kfree(rule);
 	}
+
 }
 
 /**
@@ -648,6 +685,11 @@ static int checkentry(const char *tablename,
 	
 	if (matchinfosize != IPT_ALIGN(sizeof (*info)))
 		return 0;
+
+	if (!rule_hashtable) {
+		rule_hashtable = alloc_hashtable(HASH_SIZE);
+	}
+	
 	/* 
 	 * Adds a rule to list only if it doesn't exist. 
 	 */
