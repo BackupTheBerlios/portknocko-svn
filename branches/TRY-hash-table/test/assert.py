@@ -1,5 +1,6 @@
 import sys
 import re
+import string
 
 def testLog(file):
 	pfile = open(file, 'r')	
@@ -8,9 +9,11 @@ def testLog(file):
 	
 	for x in range (0, len(content)-1, 2):
 		pattern = content[x+1][:-1]
-		if not re.search(pattern, content[x]):
-			print "ASSERT ERROR: " + pattern + " IS NOT IN " + content[x]
-			sys.exit()
+		tokens = string.split(pattern, ",")
+		for token in tokens:
+			if not re.search(token, content[x]):
+				print "ASSERT ERROR: " + token + " IS NOT IN " + content[x]
+				sys.exit()
 
 	
 	print "PASS OK!"
