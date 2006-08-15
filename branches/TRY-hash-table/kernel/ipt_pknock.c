@@ -28,7 +28,9 @@ MODULE_LICENSE("GPL");
 
 #define EXPIRATION_TIME 50000 /* in msecs */
 
-#define HASH_SIZE 256 
+#define DEFAULT_RULE_HASH_SIZE 128
+
+unsigned int ipt_pknock_rule_htable_size = DEFAULT_RULE_HASH_SIZE;
 
 struct list_head *rule_hashtable = NULL;
 static DEFINE_SPINLOCK(rule_list_lock);
@@ -267,7 +269,7 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 
-	int hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
+	int hash = calc_hash(info->rule_name, info->rule_name_len, ipt_pknock_rule_htable_size);
 	
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each_safe(pos, n, &rule_hashtable[hash]) {
@@ -293,7 +295,7 @@ static int add_rule(struct ipt_pknock_info *info) {
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL;
 	
-	int hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
+	int hash = calc_hash(info->rule_name, info->rule_name_len, ipt_pknock_rule_htable_size);
 
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each(pos, &rule_hashtable[hash]) {
@@ -354,7 +356,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
 	struct list_head *pos = NULL, *n = NULL;
 	struct peer_status *peer = NULL;
 	
-	int hash = calc_hash(info->rule_name, info->rule_name_len, HASH_SIZE);
+	int hash = calc_hash(info->rule_name, info->rule_name_len, ipt_pknock_rule_htable_size);
 	
 	if (list_empty(&rule_hashtable[hash])) return;
 
@@ -692,7 +694,7 @@ static int checkentry(const char *tablename,
 		return 0;
 
 	if (!rule_hashtable) {
-		rule_hashtable = alloc_hashtable(HASH_SIZE);
+		rule_hashtable = alloc_hashtable(ipt_pknock_rule_htable_size);
 	}
 	
 	/* 
@@ -721,6 +723,21 @@ static struct ipt_match ipt_pknock_match = {
 	.destroy	= destroy,
 	.me 		= THIS_MODULE
 };
+
+static int set_rule_hashsize(const char *val, struct kernel_param *kp) {
+        int hashsize;
+	
+        hashsize = simple_strtol(val, NULL, 0);
+        
+	if (!hashsize)
+                return -EINVAL;
+
+	ipt_pknock_rule_htable_size = hashsize;
+				
+	return 0;
+}	
+
+module_param_call(rule_hashsize, set_rule_hashsize, param_get_uint, &ipt_pknock_rule_htable_size, 0600);
 
 static int __init init(void) 
 {
