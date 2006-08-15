@@ -1,5 +1,5 @@
 ./reset.sh
-./test.sh 2> /dev/null 1> /dev/null
+./rules.sh 2> /dev/null 1> /dev/null
 #dmesg -c 2> /dev/null 1> /dev/null
 
 file="output.txt"
