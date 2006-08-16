@@ -1,0 +1,2 @@
+#!/bin/sh
+make && make install && depmod -ae && insmod ./ipt_pknock.ko rule_hashsize=$1 peer_hashsize=$2
