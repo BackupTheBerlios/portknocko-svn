@@ -1,10 +1,7 @@
 #!/bin/bash
 
-test_count=0
-
 function expect() {
 	tail -n 1 /proc/net/ipt_pknock/$2 >> $file
-	((test_count++))
 	echo $1 >> $file
 }
 
@@ -21,10 +18,6 @@ function init() {
 	./reset.sh
 	./rules.sh 2> /dev/null 1> /dev/null
 	> $1
-}
-
-function report() {
-	echo $test_count "tests"
 }
 
 if [ -z $1 ]; then 
@@ -46,5 +39,3 @@ init $file
 run $testsuite
 
 python assert.py $file
-
-report
