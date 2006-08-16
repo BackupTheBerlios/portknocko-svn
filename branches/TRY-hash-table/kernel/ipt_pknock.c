@@ -16,7 +16,8 @@
 #include <linux/list.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>
-#include <linux/vmalloc.h>
+#include <linux/jhash.h>
+#include <linux/random.h>
 
 #include <linux/netfilter_ipv4/ip_tables.h>
 //#include <linux/netfilter_ipv4/ipt_pknock.h>
@@ -31,6 +32,8 @@ MODULE_LICENSE("GPL");
 #define DEFAULT_RULE_HASH_SIZE 16
 #define DEFAULT_PEER_HASH_SIZE 64
 
+static u32 ipt_pknock_hash_rnd;
+
 unsigned int ipt_pknock_rule_htable_size = DEFAULT_RULE_HASH_SIZE;
 unsigned int ipt_pknock_peer_htable_size = DEFAULT_PEER_HASH_SIZE;
 
@@ -38,13 +41,9 @@ struct list_head *rule_hashtable = NULL;
 static DEFINE_SPINLOCK(rule_list_lock);
 static struct proc_dir_entry *proc_net_ipt_pknock = NULL;
 
-static int calc_hash(const char *str, unsigned int len, unsigned int max){
-	int i, total=0;
-	for (i=0; i < len; i++)
-		total += str[i];
-	return total % max;
+static u32 pknock_hash(const void *key, u32 length, u32 initval, u32 max) {
+	return jhash(key, length, initval) % max;
 }
-
 
 static struct list_head *alloc_hashtable(int size) {
         struct list_head *hash = NULL;
@@ -55,15 +54,13 @@ static struct list_head *alloc_hashtable(int size) {
 		return 0;
 	}
 
-        if (hash) {
-                for (i = 0; i < size; i++) {
-                        INIT_LIST_HEAD(&hash[i]);
-		}
-#if DEBUG
-		printk(KERN_DEBUG MOD "%d buckets malloced. \n", size);
-#endif				
+        for (i = 0; i < size; i++) {
+        	INIT_LIST_HEAD(&hash[i]);
 	}
 
+#if DEBUG
+	printk(KERN_DEBUG MOD "%d buckets malloced. \n", size);
+#endif				
         return hash;
 }
 
@@ -236,7 +233,8 @@ static int read_proc(char *buf, char **start, off_t offset, int count, int *eof,
  *
  * @param unsigned long r
  */
-static void peer_gc(unsigned long r) {
+
+/*static void peer_gc(unsigned long r) {
 	struct ipt_pknock_rule *rule = (struct ipt_pknock_rule *)r;
 	struct peer *peer = NULL;
 	struct list_head *pos = NULL, *n = NULL;
@@ -257,7 +255,7 @@ static void peer_gc(unsigned long r) {
 			}
 		}
 	}
-}
+}*/
 
 /**
  * search_rule()
@@ -271,7 +269,7 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 
-	int hash = calc_hash(info->rule_name, info->rule_name_len, ipt_pknock_rule_htable_size);
+	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
 	
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each_safe(pos, n, &rule_hashtable[hash]) {
@@ -297,8 +295,12 @@ static int add_rule(struct ipt_pknock_info *info) {
 	struct ipt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL;
 	
-	int hash = calc_hash(info->rule_name, info->rule_name_len, ipt_pknock_rule_htable_size);
+	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
 
+#if DEBUG
+	printk(KERN_INFO MOD "hash index: %d \n", hash);
+#endif
+	
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each(pos, &rule_hashtable[hash]) {
 			rule = list_entry(pos, struct ipt_pknock_rule, head);
@@ -360,7 +362,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
 	struct list_head *pos = NULL, *n = NULL;
 	struct peer *peer = NULL;
 	
-	int hash = calc_hash(info->rule_name, info->rule_name_len, ipt_pknock_rule_htable_size);
+	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
 	
 	if (list_empty(&rule_hashtable[hash])) return;
 
@@ -698,6 +700,7 @@ static int checkentry(const char *tablename,
 		return 0;
 
 	if (!rule_hashtable) {
+		get_random_bytes(&ipt_pknock_hash_rnd, sizeof(u32));
 		rule_hashtable = alloc_hashtable(ipt_pknock_rule_htable_size);
 	}
 	
