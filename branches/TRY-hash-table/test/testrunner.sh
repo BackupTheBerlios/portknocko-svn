@@ -38,4 +38,4 @@ init $file
 
 run $testsuite
 
-python assert.py $file
+python tester.py $file
