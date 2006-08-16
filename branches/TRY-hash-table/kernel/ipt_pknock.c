@@ -297,10 +297,6 @@ static int add_rule(struct ipt_pknock_info *info) {
 	
 	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
 
-#if DEBUG
-	printk(KERN_INFO MOD "hash index: %d \n", hash);
-#endif
-	
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each(pos, &rule_hashtable[hash]) {
 			rule = list_entry(pos, struct ipt_pknock_rule, head);

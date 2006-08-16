@@ -29,3 +29,6 @@ expect "MATCHING,10.0.0.3" "HTTP2"
 knock "10.0.0.4" "2004"
 expect "MATCHING,10.0.0.4" "HTTP2"
 
+knock "10.0.0.4" "2004"
+expect "DIDN'T MATCH" "dmesg"
+

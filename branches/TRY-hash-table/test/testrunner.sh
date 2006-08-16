@@ -1,7 +1,11 @@
 #!/bin/bash
 
 function expect() {
-	tail -n 1 /proc/net/ipt_pknock/$2 >> $file
+	if [ $2 == "dmesg" ]; then
+		dmesg | tail -n 1 >> $file
+	else
+		tail -n 1 /proc/net/ipt_pknock/$2 >> $file
+	fi
 	echo $1 >> $file
 }
 
