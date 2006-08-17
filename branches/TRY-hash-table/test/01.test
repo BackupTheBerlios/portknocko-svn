@@ -9,9 +9,6 @@ expect "ALLOWED,192.168.0.10" "SSH"
 knock "192.168.0.11" "2000"
 expect "MATCHING,192.168.0.11" "SSH"
 
-knock "192.168.0.11" "2002"
-expect "MATCHING,192.168.0.11" "SSH"
-
 knock "192.168.0.11" "2001"
 expect "ALLOWED,192.168.0.11" "SSH"
 
