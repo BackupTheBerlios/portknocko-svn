@@ -71,7 +71,7 @@ static struct list_head *alloc_hashtable(int size) {
  *
  * @param struct iphdr *iph
  */
-static inline void print_ip_packet(struct iphdr *iph) {
+/*static inline void print_ip_packet(struct iphdr *iph) {
 	printk(KERN_INFO MOD "\nIP packet:\n"
 		"VER=%d | IHL=%d | TOS=0x%02X | LEN=%d\n"
 		"ID=%u | Flags | FRAG_OFF=%d\n"
@@ -83,14 +83,14 @@ static inline void print_ip_packet(struct iphdr *iph) {
 		iph->ttl, iph->protocol, ntohl(iph->check),
 		NIPQUAD(iph->saddr), 
 		NIPQUAD(iph->daddr));
-}
+}*/
 
 /**
  * print_options()
  *
  * @param struct ipt_pknock_info *info
  */
-static inline void print_options(struct ipt_pknock_info *info) {
+/*static inline void print_options(struct ipt_pknock_info *info) {
 	int i;
 
 	printk(KERN_INFO MOD "pknock options from kernel:\n"
@@ -99,14 +99,14 @@ static inline void print_options(struct ipt_pknock_info *info) {
 	
 	for (i=0; i<info->count_ports; i++)
 		printk(KERN_INFO MOD "port[%d]: %d\n", i, info->port[i]);
-}
+}*/
 
 /**
  * print_list_peer()
  *
  * @param struct ipt_pknock_info *info
  */
-static inline void print_list_peer(struct ipt_pknock_rule *rule) {
+/*static inline void print_list_peer(struct ipt_pknock_rule *rule) {
 	struct list_head *pos = NULL;
 	struct peer *peer = NULL;
 	u_int32_t ip;
@@ -121,7 +121,7 @@ static inline void print_list_peer(struct ipt_pknock_rule *rule) {
 		printk(KERN_INFO MOD "(*) peer: %u.%u.%u.%u - tstamp: %ld\n", 
 					NIPQUAD(ip), peer->timestamp);
 	}
-}
+}*/
 #endif
 
 /**
@@ -696,8 +696,8 @@ static int checkentry(const char *tablename,
 		return 0;
 
 	if (!rule_hashtable) {
-		get_random_bytes(&ipt_pknock_hash_rnd, sizeof(u32));
 		rule_hashtable = alloc_hashtable(ipt_pknock_rule_htable_size);
+		get_random_bytes(&ipt_pknock_hash_rnd, sizeof(u32));
 	}
 	
 	/* 
