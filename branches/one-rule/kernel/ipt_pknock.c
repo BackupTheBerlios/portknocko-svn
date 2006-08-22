@@ -665,10 +665,10 @@ static int match(const struct sk_buff *skb,
 			add_peer(peer, rule);
 			set_peer(peer);
 			ret = update_peer(peer, info, port);
-			GOTOVAL(end, (ret)?0:1);
+			GOTOVAL(end, ret?0:1);
 		} else if (peer != NULL) {
 			ret = update_peer(peer, info, port);
-			GOTOVAL(end, (ret)?0:1);
+			GOTOVAL(end, ret?0:1);
 		}
 	}
 	if (peer != NULL) {
@@ -678,7 +678,7 @@ static int match(const struct sk_buff *skb,
 			printk(KERN_INFO MOD "(P) peer: %u.%u.%u.%u - PASS OK.\n", 
 					NIPQUAD(peer->ip));
 #endif		
-		GOTOVAL(end, (ret)?0:1);
+		GOTOVAL(end, ret?0:1);
 #if DEBUG		
 	} else 
 		printk(KERN_INFO MOD "(P) PASS FAIL.\n");
