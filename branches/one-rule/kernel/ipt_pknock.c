@@ -73,7 +73,7 @@ static struct list_head *alloc_hashtable(int size) {
  *
  * @param struct iphdr *iph
  */
-/*static inline void print_ip_packet(struct iphdr *iph) {
+static inline void print_ip_packet(struct iphdr *iph) {
 	printk(KERN_INFO MOD "\nIP packet:\n"
 		"VER=%d | IHL=%d | TOS=0x%02X | LEN=%d\n"
 		"ID=%u | Flags | FRAG_OFF=%d\n"
@@ -85,14 +85,14 @@ static struct list_head *alloc_hashtable(int size) {
 		iph->ttl, iph->protocol, ntohl(iph->check),
 		NIPQUAD(iph->saddr), 
 		NIPQUAD(iph->daddr));
-}*/
+}
 
 /**
  * print_options()
  *
  * @param struct ipt_pknock_info *info
  */
-/*static inline void print_options(struct ipt_pknock_info *info) {
+static inline void print_options(struct ipt_pknock_info *info) {
 	int i;
 
 	printk(KERN_INFO MOD "pknock options from kernel:\n"
@@ -101,14 +101,14 @@ static struct list_head *alloc_hashtable(int size) {
 	
 	for (i=0; i<info->count_ports; i++)
 		printk(KERN_INFO MOD "port[%d]: %d\n", i, info->port[i]);
-}*/
+}
 
 /**
  * print_list_peer()
  *
  * @param struct ipt_pknock_info *info
  */
-/*static inline void print_list_peer(struct ipt_pknock_rule *rule) {
+static inline void print_list_peer(struct ipt_pknock_rule *rule) {
 	struct list_head *pos = NULL;
 	struct peer *peer = NULL;
 	u_int32_t ip;
@@ -123,7 +123,7 @@ static struct list_head *alloc_hashtable(int size) {
 		printk(KERN_INFO MOD "(*) peer: %u.%u.%u.%u - tstamp: %ld\n", 
 					NIPQUAD(ip), peer->timestamp);
 	}
-}*/
+}
 #endif
 
 /**
@@ -428,8 +428,7 @@ static inline void update_rule_timer(struct ipt_pknock_rule *rule) {
  * @param u_int32_t ip
  * @return struct_conn_status * or NULL
  */
-static inline struct peer * get_peer(struct ipt_pknock_rule *rule, 
-									u_int32_t ip) {
+static inline struct peer * get_peer(struct ipt_pknock_rule *rule, u_int32_t ip) {
 	struct peer *peer = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 	
@@ -488,8 +487,7 @@ static inline struct peer * new_peer(u_int32_t ip, u_int8_t proto) {
  * @param struct peer *peer
  * @param struct ipt_pknock_rule *rule
  */
-static inline void add_peer(struct peer *peer, 
-						struct ipt_pknock_rule *rule) {
+static inline void add_peer(struct peer *peer, struct ipt_pknock_rule *rule) {
 	int hash = pknock_hash(&peer->ip, sizeof(u_int32_t), ipt_pknock_hash_rnd, ipt_pknock_peer_htable_size);
 
 #if DEBUG
@@ -606,17 +604,6 @@ static inline int is_allowed(struct peer *peer) {
 	return (peer->status == ST_ALLOWED) ? 1 : 0;
 }
 
-#if 0 
-/*!*/ //_SOLO_ para versiones del kernel _SUPERIORES_ a 2.6.12
-static int match(const struct sk_buff *skb,
-	      const struct net_device *in,
-	      const struct net_device *out,
-	      const void *matchinfo,
-	      int offset,
-	      unsigned int protoff,
-	      int *hotdrop) 
-#endif
-/*!*/ //_SOLO_ para versiones del kernel _HASTA_ la 2.6.12
 static int match(const struct sk_buff *skb,
 	      const struct net_device *in,
 	      const struct net_device *out,
@@ -667,7 +654,7 @@ static int match(const struct sk_buff *skb,
 	 * Sets, adds, removes or checks the peer matching status.
 	 */
 	
-	if (info->option & IPT_PKNOCK_SETIP) {
+	if (info->option & IPT_PKNOCK_KNOCKPORT) {
 		if (peer == NULL && is_1st_port_match(info, port)) {
 			peer = new_peer(iph->saddr, proto);
 			add_peer(peer, rule);
@@ -678,33 +665,25 @@ static int match(const struct sk_buff *skb,
 			ret = update_peer(peer, info, port);
 			goto end;
 		}
-	} else if (info->option & IPT_PKNOCK_CHKIP) {
-		if (peer != NULL) {
-			ret = is_allowed(peer);
-			if (ret)
-				printk(KERN_INFO MOD "(P) peer: %u.%u.%u.%u - PASS OK.\n", NIPQUAD(peer->ip));
-			goto end;
-		}
-		printk(KERN_INFO MOD "(P) PASS FAIL.\n");
 	}
+	if (peer != NULL) {
+		ret = is_allowed(peer);
+#if DEBUG		
+		if (ret)
+			printk(KERN_INFO MOD "(P) peer: %u.%u.%u.%u - PASS OK.\n", 
+					NIPQUAD(peer->ip));
+#endif		
+		goto end;
+#if DEBUG		
+	} else 
+		printk(KERN_INFO MOD "(P) PASS FAIL.\n");
+#endif
 
 end:
 	spin_unlock_bh(&rule_list_lock);
 	return ret;
 }
 
-/**
- * If it returns 0, then the iptable rule is not accepted
- */
-#if 0 
-/*!*/ //_SOLO_ para versiones del kernel superiores a 2.6.12
-static int checkentry(const char *tablename,
-			const void *ip,
-			void *matchinfo,
-			unsigned int matchinfosize,
-			unsigned int hook_mask) 
-#endif
-/*!*/ //_SOLO_ para versiones del kernel hasta la 2.6.12
 static int checkentry(const char *tablename,
 			const struct ipt_ip *ip,
 			void *matchinfo,

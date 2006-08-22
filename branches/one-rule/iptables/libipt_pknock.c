@@ -19,11 +19,7 @@
 #include "../kernel/ipt_pknock.h"
 
 static struct option opts[] = {
-        { .name = "setip",	.has_arg = 0,	.flag = 0,	.val = 's' },
-	{ .name = "checkip", 	.has_arg = 0, 	.flag = 0,	.val = 'c' },
-	{ .name = "chkip", 	.has_arg = 0, 	.flag = 0,	.val = 'c' }, /* synonym */
-	{ .name = "dports", 	.has_arg = 1,	.flag = 0,	.val = 'd' },
-	{ .name = "destination-ports", .has_arg = 1, .flag = 0,	.val = 'd' }, /* synonym */
+	{ .name = "knock-port", .has_arg = 1,	.flag = 0,	.val = 'k' },
 	{ .name = "t",		.has_arg = 1, 	.flag = 0, 	.val = 't' },
 	{ .name = "time",	.has_arg = 1, 	.flag = 0,	.val = 't' }, /* synonym */
 	{ .name = "name", 	.has_arg = 1, 	.flag = 0, 	.val = 'n' },
@@ -36,7 +32,7 @@ static void help(void) {
 		" --checkip		Matches if the source ip address is in the list.\n"
 		" --chkip\n"
 		" --destination-ports port[,port,port,...]\n"
-		" --dports ...		Matches destination port(s).\n"
+		" --knockports ...		Matches destination port(s).\n"
 		" --time seconds\n"
 		" --t ...		Time between port match.\n"
 		" --name rule_name	Rule name.\n", IPTABLES_VERSION);
@@ -119,33 +115,17 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 /*** VERIFICAR en cada opción el inverso (!). */
 	
 	switch (c) {
-	case 's': /* --setip */
-		if (*flags & IPT_PKNOCK_SETIP)
-			exit_error(PARAMETER_PROBLEM, MOD "Can't use --setip twice.\n"); 
-
-		*flags |= IPT_PKNOCK_SETIP;
-		info->option |= IPT_PKNOCK_SETIP;
-		break;
-		
-	case 'c': /* --checkip */
-		if (*flags & IPT_PKNOCK_CHKIP)
-			exit_error(PARAMETER_PROBLEM, MOD "Can't use --checkip twice.\n");
-
-		*flags |= IPT_PKNOCK_CHKIP;
-		info->option |= IPT_PKNOCK_CHKIP;
-		break;
-		
-	case 'd': /* --destination-ports */
-		if (*flags & IPT_PKNOCK_DPORT)
-			exit_error(PARAMETER_PROBLEM, MOD "Cant't use --dport twice.\n");
+	case 'k': /* --knock-port */
+		if (*flags & IPT_PKNOCK_KNOCKPORT)
+			exit_error(PARAMETER_PROBLEM, MOD "Cant't use --knockport twice.\n");
 		
 		if ((ret = parse_ports(optarg, info->port, &(info->count_ports))) != 0) 
 			EXIT_ERR_REPORT(ret);
 #if DEBUG
 		printf("count_ports: %d\n", info->count_ports);
 #endif
-		*flags |= IPT_PKNOCK_DPORT;
-		info->option |= IPT_PKNOCK_DPORT;
+		*flags |= IPT_PKNOCK_KNOCKPORT;
+		info->option |= IPT_PKNOCK_KNOCKPORT;
 		break;
 		
 	case 't': /* --time */
@@ -194,10 +174,8 @@ static void print(const struct ipt_ip *ip, const struct ipt_entry_match *match, 
 	int i;
 	
 	printf("pknock ");
-	if (info->option & IPT_PKNOCK_SETIP) printf("setip ");
-	if (info->option & IPT_PKNOCK_CHKIP) printf("chkip ");
-	if (info->option & IPT_PKNOCK_DPORT) {
-		printf("dports ");
+	if (info->option & IPT_PKNOCK_KNOCKPORT) {
+		printf("knockports ");
 		for (i=0; i<info->count_ports; i++)
 			printf("%s%d", i ? "," : "", info->port[i]);
 		printf(" ");
@@ -215,10 +193,8 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match) {
 	const struct ipt_pknock_info *info = (const struct ipt_pknock_info *)match->data;
 	int i;
 	
-	if (info->option & IPT_PKNOCK_SETIP) printf("--setip ");
-	if (info->option & IPT_PKNOCK_CHKIP) printf("--chkip ");
-	if (info->option & IPT_PKNOCK_DPORT) {
-		printf("--dports ");
+	if (info->option & IPT_PKNOCK_KNOCKPORT) {
+		printf("--knockports ");
 		for (i=0; i<info->count_ports; i++)
 			printf("%s%d", i ? "," : "", info->port[i]);
 		printf(" ");
