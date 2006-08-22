@@ -488,7 +488,8 @@ static inline struct peer * new_peer(u_int32_t ip, u_int8_t proto) {
  * @param struct ipt_pknock_rule *rule
  */
 static inline void add_peer(struct peer *peer, struct ipt_pknock_rule *rule) {
-	int hash = pknock_hash(&peer->ip, sizeof(u_int32_t), ipt_pknock_hash_rnd, ipt_pknock_peer_htable_size);
+	int hash = pknock_hash(&peer->ip, sizeof(u_int32_t), 
+			ipt_pknock_hash_rnd, ipt_pknock_peer_htable_size);
 
 #if DEBUG
 //	printk(KERN_DEBUG MOD "add_peer() -> hash %d \n", hash);
@@ -553,20 +554,19 @@ static int update_peer(struct peer *peer,
 	/* 
 	 * Verifies the id port that it should knock. 
 	 */
-	if (info->option & IPT_PKNOCK_SETIP) {
-		if (info->port[peer->id_port_knocked-1] != port) {
+	if (info->port[peer->id_port_knocked-1] != port) {
 #if DEBUG
-			printk(KERN_INFO MOD "(S) peer: %u.%u.%u.%u - DIDN'T MATCH.\n", NIPQUAD(peer->ip));
+		printk(KERN_INFO MOD "(S) peer: %u.%u.%u.%u - DIDN'T MATCH.\n", NIPQUAD(peer->ip));
 #endif
-			return 0;
-		}
-		peer->id_port_knocked++;
-		
-		if (peer->id_port_knocked-1 == info->count_ports) {
-			peer->status = ST_ALLOWED;
-			status = "ALLOWED";
-		}
+		return 0;
 	}
+	peer->id_port_knocked++;
+	
+	if (peer->id_port_knocked-1 == info->count_ports) {
+		peer->status = ST_ALLOWED;
+		status = "ALLOWED";
+	}
+
 	/* 
 	 * Controls the max matching time between ports.
 	 */
@@ -603,6 +603,11 @@ static int update_peer(struct peer *peer,
 static inline int is_allowed(struct peer *peer) {
 	return (peer->status == ST_ALLOWED) ? 1 : 0;
 }
+
+#define GOTOVAL(go, val) do { 	\
+	ret = val;		\
+	goto go;		\
+} while (0)			\
 
 static int match(const struct sk_buff *skb,
 	      const struct net_device *in,
@@ -660,10 +665,10 @@ static int match(const struct sk_buff *skb,
 			add_peer(peer, rule);
 			set_peer(peer);
 			ret = update_peer(peer, info, port);
-			goto end;
+			GOTOVAL(end, (ret)?0:1);
 		} else if (peer != NULL) {
 			ret = update_peer(peer, info, port);
-			goto end;
+			GOTOVAL(end, (ret)?0:1);
 		}
 	}
 	if (peer != NULL) {
@@ -673,7 +678,7 @@ static int match(const struct sk_buff *skb,
 			printk(KERN_INFO MOD "(P) peer: %u.%u.%u.%u - PASS OK.\n", 
 					NIPQUAD(peer->ip));
 #endif		
-		goto end;
+		GOTOVAL(end, (ret)?0:1);
 #if DEBUG		
 	} else 
 		printk(KERN_INFO MOD "(P) PASS FAIL.\n");
