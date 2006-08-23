@@ -28,14 +28,10 @@ static struct option opts[] = {
 
 static void help(void) {
 	printf("Port Knocking match v%s options:\n"
-		" --setip		Adds a source ip address to list, it always matches.\n"
-		" --checkip		Matches if the source ip address is in the list.\n"
-		" --chkip\n"
-		" --destination-ports port[,port,port,...]\n"
-		" --knockports ...		Matches destination port(s).\n"
+		" --knockports port[,port,port,...] 	Matches destination port(s).\n"
 		" --time seconds\n"
-		" --t ...		Time between port match.\n"
-		" --name rule_name	Rule name.\n", IPTABLES_VERSION);
+		" --t ...				Time between port match.\n"
+		" --name rule_name			Rule name.\n", IPTABLES_VERSION);
 }
 
 /*
