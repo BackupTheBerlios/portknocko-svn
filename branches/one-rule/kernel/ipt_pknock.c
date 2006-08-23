@@ -558,7 +558,7 @@ static int update_peer(struct peer *peer,
 #if DEBUG
 		printk(KERN_INFO MOD "(S) peer: %u.%u.%u.%u - DIDN'T MATCH.\n", NIPQUAD(peer->ip));
 #endif
-		return 0;
+		return 1;
 	}
 	peer->id_port_knocked++;
 	
@@ -581,7 +581,7 @@ static int update_peer(struct peer *peer,
 				peer->timestamp + info->max_time, time);
 #endif
 			remove_peer(peer);
-			return 1;
+			return 0;
 		}
 		peer->timestamp = time;		
 	}
@@ -589,7 +589,7 @@ static int update_peer(struct peer *peer,
 	printk(KERN_INFO MOD "(S) peer: %u.%u.%u.%u - %s.\n", 
 		NIPQUAD(peer->ip), (status==NULL) ? "MATCHING" : status);
 #endif
-	return 1;
+	return 0;
 }
 
 /**
@@ -604,10 +604,6 @@ static inline int is_allowed(struct peer *peer) {
 	return (peer->status == ST_ALLOWED) ? 1 : 0;
 }
 
-#define GOTOVAL(go, val) do { 	\
-	ret = val;		\
-	goto go;		\
-} while (0)			\
 
 static int match(const struct sk_buff *skb,
 	      const struct net_device *in,
@@ -658,34 +654,23 @@ static int match(const struct sk_buff *skb,
 	/*
 	 * Sets, adds, removes or checks the peer matching status.
 	 */
-	
 	if (info->option & IPT_PKNOCK_KNOCKPORT) {
 		if (peer == NULL && is_1st_port_match(info, port)) {
 			peer = new_peer(iph->saddr, proto);
 			add_peer(peer, rule);
 			set_peer(peer);
 			ret = update_peer(peer, info, port);
-			GOTOVAL(end, ret?0:1);
+			goto end;
 		} else if (peer != NULL) {
-			ret = update_peer(peer, info, port);
-			GOTOVAL(end, ret?0:1);
+			update_peer(peer, info, port);
+			ret = is_allowed(peer);
+			goto end;
 		}
 	}
-	if (peer != NULL) {
-		ret = is_allowed(peer);
-#if DEBUG		
-		if (ret)
-			printk(KERN_INFO MOD "(P) peer: %u.%u.%u.%u - PASS OK.\n", 
-					NIPQUAD(peer->ip));
-#endif		
-		GOTOVAL(end, ret?0:1);
-#if DEBUG		
-	} else 
-		printk(KERN_INFO MOD "(P) PASS FAIL.\n");
-#endif
 
 end:
 	spin_unlock_bh(&rule_list_lock);
+	printk("match(): return %d | %s | peer: %u.%u.%u.%u\n", ret, ret ? "PASS OK" : "PASS FAIL", NIPQUAD(peer->ip));
 	return ret;
 }
 

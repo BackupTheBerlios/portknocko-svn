@@ -29,7 +29,7 @@ struct ipt_pknock_info {
 	u_int8_t 	count_ports;			/* number of ports */
 	u_int16_t 	port[IPT_PKNOCK_MAX_PORTS];	/* port[,port,port,...] */
 	unsigned long 	max_time;			/* max matching time between ports */
-	u_int8_t 	option;	/* --setip, --checkip, --dport, --time */
+	u_int8_t 	option;	/* --time, --knock-port */
 };
 
 enum status {ST_INIT=1, ST_MATCHING, ST_ALLOWED};
