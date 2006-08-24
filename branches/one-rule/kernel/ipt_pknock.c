@@ -484,6 +484,10 @@ static inline void add_peer(struct peer *peer, struct ipt_pknock_rule *rule) {
 	printk(KERN_DEBUG MOD "add_peer() -> hash %d \n", hash);
 #endif				
 	list_add_tail(&peer->head, &rule->peer_head[hash]);
+	
+	peer->timestamp = jiffies/HZ;
+	peer->status = ST_MATCHING;
+	peer->id_port_knocked = 1;
 }
 
 /**
@@ -510,19 +514,6 @@ static inline void remove_peer(struct peer *peer) {
  */
 static inline int is_1st_port_match(struct ipt_pknock_info *info, u_int16_t port) {
 	return (info->port[0] == port) ? 1 : 0;
-}
-
-/**
- * set_peer()
- *
- * It sets the peer matching status after that the 1st port has matched.
- *
- * @peer
- */
-static inline void set_peer(struct peer *peer) {
-	peer->timestamp = jiffies/HZ;
-	peer->status = ST_MATCHING;
-	peer->id_port_knocked = 1;
 }
 
 /**
@@ -646,7 +637,6 @@ static int match(const struct sk_buff *skb,
 		if (peer == NULL && is_1st_port_match(info, port)) {
 			peer = new_peer(iph->saddr, proto);
 			add_peer(peer, rule);
-			set_peer(peer);
 			ret = update_peer(peer, info, port);
 			goto end;
 		} else if (peer != NULL) {
