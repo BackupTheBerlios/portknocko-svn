@@ -629,7 +629,7 @@ static int match(const struct sk_buff *skb,
 	 */
 	if ((rule = search_rule(info)) == NULL) {
 		printk(KERN_INFO MOD "The rule %s doesn't exist.\n", info->rule_name);
-		return 0;
+		goto end;
 	}
 	/*
 	 * Updates the rule timer to execute the garbage collector.
