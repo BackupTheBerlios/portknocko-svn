@@ -658,9 +658,9 @@ static int match(const struct sk_buff *skb,
 
 end:
 	spin_unlock_bh(&rule_list_lock);
-	printk("KERN DEBUG MOD match(): return %d | %s", ret, ret ? "PASS OK" : "PASS FAIL\n");
+	printk(KERN_DEBUG MOD "match(): return %d | %s", ret, ret ? "PASS OK\n" : "PASS FAIL\n");
 	if (peer)
-		printk("KERN DEBUG MOD match(): peer: %u.%u.%u.%u\n", NIPQUAD(peer->ip));
+		printk(KERN_DEBUG MOD "match(): peer: %u.%u.%u.%u\n", NIPQUAD(peer->ip));
 	return ret;
 }
 
