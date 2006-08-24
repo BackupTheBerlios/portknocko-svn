@@ -19,7 +19,7 @@
 #include "../kernel/ipt_pknock.h"
 
 static struct option opts[] = {
-	{ .name = "knock-port", .has_arg = 1,	.flag = 0,	.val = 'k' },
+	{ .name = "knockports", .has_arg = 1,	.flag = 0,	.val = 'k' },
 	{ .name = "t",		.has_arg = 1, 	.flag = 0, 	.val = 't' },
 	{ .name = "time",	.has_arg = 1, 	.flag = 0,	.val = 't' }, /* synonym */
 	{ .name = "name", 	.has_arg = 1, 	.flag = 0, 	.val = 'n' },
@@ -111,9 +111,9 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 /*** VERIFICAR en cada opción el inverso (!). */
 	
 	switch (c) {
-	case 'k': /* --knock-port */
+	case 'k': /* --knockports */
 		if (*flags & IPT_PKNOCK_KNOCKPORT)
-			exit_error(PARAMETER_PROBLEM, MOD "Cant't use --knockport twice.\n");
+			exit_error(PARAMETER_PROBLEM, MOD "Cant't use --knockports twice.\n");
 		
 		if ((ret = parse_ports(optarg, info->port, &(info->count_ports))) != 0) 
 			EXIT_ERR_REPORT(ret);
