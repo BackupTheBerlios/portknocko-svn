@@ -620,7 +620,7 @@ static int match(const struct sk_buff *skb,
 	
 	default:
 		printk(KERN_INFO MOD "IP payload protocol is neither tcp nor udp.\n");
-		return 0;
+		goto end;
 	}
 
 	spin_lock_bh(&rule_list_lock);
@@ -658,8 +658,9 @@ static int match(const struct sk_buff *skb,
 
 end:
 	spin_unlock_bh(&rule_list_lock);
-	printk("match(): return %d | %s | peer: %u.%u.%u.%u\n", 
-		ret, ret ? "PASS OK" : "PASS FAIL", NIPQUAD(peer->ip));
+	printk("KERN DEBUG MOD match(): return %d | %s", ret, ret ? "PASS OK" : "PASS FAIL\n");
+	if (peer)
+		printk("KERN DEBUG MOD match(): peer: %u.%u.%u.%u\n", NIPQUAD(peer->ip));
 	return ret;
 }
 
