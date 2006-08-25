@@ -517,6 +517,19 @@ static inline int is_1st_port_match(struct ipt_pknock_info *info, u_int16_t port
 }
 
 /**
+ * is_allowed()
+ *
+ * It checks the peer matching status.
+ *
+ * @peer
+ * @return: 1 allow, 0 otherwise
+ */
+static inline int is_allowed(struct peer *peer) {
+	return (peer->status == ST_ALLOWED) ? 1 : 0;
+}
+
+
+/**
  * update_peer()
  *
  * It updates the peer matching status.
@@ -529,6 +542,11 @@ static inline int is_1st_port_match(struct ipt_pknock_info *info, u_int16_t port
 static int update_peer(struct peer *peer, struct ipt_pknock_info *info, u_int16_t port) {
 	unsigned long time;
 	const char *status = NULL;
+
+	if (is_allowed(peer)) {
+		printk(KERN_INFO MOD "(S) peer: %u.%u.%u.%u - PASS OK.\n", NIPQUAD(peer->ip));
+		return 1;
+	}
 
 	/* 
 	 * Verifies the id port that it should knock. 
@@ -569,18 +587,6 @@ static int update_peer(struct peer *peer, struct ipt_pknock_info *info, u_int16_
 		NIPQUAD(peer->ip), (status==NULL) ? "MATCHING" : status);
 #endif
 	return 0;
-}
-
-/**
- * is_allowed()
- *
- * It checks the peer matching status.
- *
- * @peer
- * @return: 1 allow, 0 otherwise
- */
-static inline int is_allowed(struct peer *peer) {
-	return (peer->status == ST_ALLOWED) ? 1 : 0;
 }
 
 
@@ -648,9 +654,6 @@ static int match(const struct sk_buff *skb,
 
 end:
 	spin_unlock_bh(&rule_list_lock);
-	printk(KERN_DEBUG MOD "match(): return %d | %s", ret, ret ? "PASS OK\n" : "PASS FAIL\n");
-	if (peer)
-		printk(KERN_DEBUG MOD "match(): peer: %u.%u.%u.%u\n", NIPQUAD(peer->ip));
 	return ret;
 }
 
