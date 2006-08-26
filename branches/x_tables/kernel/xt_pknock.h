@@ -8,27 +8,26 @@
  *
  * This program is released under the terms of GNU GPL.
  */
-#ifndef _IPT_PKNOCK_H
-#define _IPT_PKNOCK_H
+#ifndef _XT_PKNOCK_H
+#define _XT_PKNOCK_H
 
 #define MOD "xt_pknock: "
 
-#define IPT_PKNOCK_KNOCKPORT 	0x0001
-#define IPT_PKNOCK_TIME  	0x0002
-#define IPT_PKNOCK_NAME  	0x0004
-#define IPT_PKNOCK_SECURE  	0x0008
+#define XT_PKNOCK_KNOCKPORT 	0x0001
+#define XT_PKNOCK_TIME  	0x0002
+#define XT_PKNOCK_NAME  	0x0004
+#define XT_PKNOCK_SECURE  	0x0008
 
-
-#define IPT_PKNOCK_MAX_PORTS 	15
-#define IPT_PKNOCK_MAX_BUF_LEN 	256
+#define XT_PKNOCK_MAX_PORTS 	15
+#define XT_PKNOCK_MAX_BUF_LEN 	256
 
 #define DEBUG 1
 
 struct xt_pknock_info {
-	char		rule_name[IPT_PKNOCK_MAX_BUF_LEN]; /* rule name */
+	char		rule_name[XT_PKNOCK_MAX_BUF_LEN]; /* rule name */
 	int		rule_name_len;
 	u_int8_t 	count_ports;			/* number of ports */
-	u_int16_t 	port[IPT_PKNOCK_MAX_PORTS];	/* port[,port,port,...] */
+	u_int16_t 	port[XT_PKNOCK_MAX_PORTS];	/* port[,port,port,...] */
 	unsigned long 	max_time;			/* max matching time between ports */
 	u_int8_t 	option;	/* --time, --knock-port */
 };
@@ -52,7 +51,7 @@ struct peer {
 
 struct xt_pknock_rule {
 	struct list_head 	head;
-	char			rule_name[IPT_PKNOCK_MAX_BUF_LEN];
+	char			rule_name[XT_PKNOCK_MAX_BUF_LEN];
 	unsigned int		ref_count;
 	struct timer_list 	timer;		/* garbage collector timer */
 	struct list_head 	*peer_head;
@@ -61,4 +60,4 @@ struct xt_pknock_rule {
 };
 
 #endif /* __KERNEL__ */
-#endif /* _IPT_PKNOCK_H */
+#endif /* _XT_PKNOCK_H */

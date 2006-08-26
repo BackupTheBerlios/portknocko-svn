@@ -513,7 +513,7 @@ static int update_peer(struct peer *peer, struct xt_pknock_info *info, u_int16_t
 	/* 
 	 * Controls the max matching time between ports.
 	 */
-	if (info->option & IPT_PKNOCK_TIME) {
+	if (info->option & XT_PKNOCK_TIME) {
 		time = jiffies/HZ;
 		
 		if (time > (peer->timestamp + info->max_time)) {
@@ -612,14 +612,14 @@ static int match(const struct sk_buff *skb,
 	 */
 	
 	/* If security is needed and the peer is still knocking ... */
-	if ((info->option & IPT_PKNOCK_SECURE) && !IS_ALLOWED(peer)) {
+	if ((info->option & XT_PKNOCK_SECURE) && !IS_ALLOWED(peer)) {
 		payload = (void *)iph + headers_len;
 		payload_len = skb->len - headers_len;
 		if (!has_secret(payload, payload_len))
 			goto end;
 	}
 	
-	if (info->option & IPT_PKNOCK_KNOCKPORT) {
+	if (info->option & XT_PKNOCK_KNOCKPORT) {
 		if (IS_FIRST_KNOCK(peer, info, port)) {
 			peer = new_peer(iph->saddr, proto);
 			add_peer(peer, rule);
@@ -645,7 +645,7 @@ static int checkentry(const char *tablename,
 {
 	struct xt_pknock_info *info = (struct xt_pknock_info *)matchinfo;
 	
-	if (matchinfosize != IPT_ALIGN(sizeof (*info)))
+	if (matchinfosize != XT_ALIGN(sizeof (*info)))
 		return 0;
 
 	if (!rule_hashtable) {
