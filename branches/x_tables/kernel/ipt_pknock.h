@@ -11,7 +11,7 @@
 #ifndef _IPT_PKNOCK_H
 #define _IPT_PKNOCK_H
 
-#define MOD "ipt_pknock: "
+#define MOD "xt_pknock: "
 
 #define IPT_PKNOCK_KNOCKPORT 	0x0001
 #define IPT_PKNOCK_TIME  	0x0002
@@ -24,7 +24,7 @@
 
 #define DEBUG 1
 
-struct ipt_pknock_info {
+struct xt_pknock_info {
 	char		rule_name[IPT_PKNOCK_MAX_BUF_LEN]; /* rule name */
 	int		rule_name_len;
 	u_int8_t 	count_ports;			/* number of ports */
@@ -50,7 +50,7 @@ struct peer {
 
 #include <linux/proc_fs.h>
 
-struct ipt_pknock_rule {
+struct xt_pknock_rule {
 	struct list_head 	head;
 	char			rule_name[IPT_PKNOCK_MAX_BUF_LEN];
 	unsigned int		ref_count;
@@ -62,4 +62,3 @@ struct ipt_pknock_rule {
 
 #endif /* __KERNEL__ */
 #endif /* _IPT_PKNOCK_H */
-

@@ -20,9 +20,9 @@
 #include <linux/jhash.h>
 #include <linux/random.h>
 
-#include <linux/netfilter_ipv4/ip_tables.h>
-//#include <linux/netfilter_ipv4/ipt_pknock.h>
-#include "ipt_pknock.h"
+#include <linux/netfilter/x_tables.h>
+//#include <linux/netfilter/xt_pknock.h>
+#include "xt_pknock.h"
 
 MODULE_AUTHOR("J. Federico Hernandez");
 MODULE_DESCRIPTION("iptables/netfilter's port knocking match module");
@@ -33,15 +33,15 @@ MODULE_LICENSE("GPL");
 #define DEFAULT_RULE_HASH_SIZE 8
 #define DEFAULT_PEER_HASH_SIZE 16
 
-static u32 ipt_pknock_hash_rnd;
+static u32 xt_pknock_hash_rnd;
 
-static unsigned int ipt_pknock_rule_htable_size = DEFAULT_RULE_HASH_SIZE;
-static unsigned int ipt_pknock_peer_htable_size = DEFAULT_PEER_HASH_SIZE;
+static unsigned int xt_pknock_rule_htable_size = DEFAULT_RULE_HASH_SIZE;
+static unsigned int xt_pknock_peer_htable_size = DEFAULT_PEER_HASH_SIZE;
 
 static struct list_head *rule_hashtable = NULL;
 
 static DEFINE_SPINLOCK(rule_list_lock);
-static struct proc_dir_entry *proc_net_ipt_pknock = NULL;
+static struct proc_dir_entry *proc_net_xt_pknock = NULL;
 
 static unsigned char *secret = "mysecret";
 
@@ -99,7 +99,7 @@ static inline void print_ip_packet(struct iphdr *iph) {
 /**
  * @info
  */
-static inline void print_options(struct ipt_pknock_info *info) {
+static inline void print_options(struct xt_pknock_info *info) {
 	int i;
 
 	printk(KERN_INFO MOD "pknock options from kernel:\n"
@@ -113,7 +113,7 @@ static inline void print_options(struct ipt_pknock_info *info) {
 /**
  * @info
  */
-static inline void print_list_peer(struct ipt_pknock_rule *rule) {
+static inline void print_list_peer(struct xt_pknock_rule *rule) {
 	struct list_head *pos = NULL;
 	struct peer *peer = NULL;
 	u_int32_t ip;
@@ -161,7 +161,7 @@ static int read_proc(char *buf, char **start, off_t offset, int count, int *eof,
 	u_int32_t ip;
 	const char *status = NULL, *proto = NULL;
 	struct list_head *p = NULL;
-	struct ipt_pknock_rule *rule = NULL;
+	struct xt_pknock_rule *rule = NULL;
 	struct peer *peer = NULL;
 	unsigned long expiration_time = 0, max_time = 0;
 
@@ -169,11 +169,11 @@ static int read_proc(char *buf, char **start, off_t offset, int count, int *eof,
 	
 	spin_lock_bh(&rule_list_lock);
 
-	rule = (struct ipt_pknock_rule *)data;
+	rule = (struct xt_pknock_rule *)data;
 
 	max_time = rule->max_time;
 
-	for (i = 0; i < ipt_pknock_peer_htable_size; i++) {		
+	for (i = 0; i < xt_pknock_peer_htable_size; i++) {		
 		list_for_each(p, &rule->peer_head[i]) {
 			peer = list_entry(p, struct peer, head);
 		
@@ -217,7 +217,7 @@ static int read_proc(char *buf, char **start, off_t offset, int count, int *eof,
  * @r: rule
  */
 static void peer_gc(unsigned long r) {
-	struct ipt_pknock_rule *rule = (struct ipt_pknock_rule *)r;
+	struct xt_pknock_rule *rule = (struct xt_pknock_rule *)r;
 	struct peer *peer = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 
@@ -245,15 +245,15 @@ static void peer_gc(unsigned long r) {
  * @info
  * @return: rule or NULL
  */
-static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info) {
-	struct ipt_pknock_rule *rule = NULL;
+static inline struct xt_pknock_rule * search_rule(struct xt_pknock_info *info) {
+	struct xt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 
-	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
+	int hash = pknock_hash(info->rule_name, info->rule_name_len, xt_pknock_hash_rnd, xt_pknock_rule_htable_size);
 	
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each_safe(pos, n, &rule_hashtable[hash]) {
-			rule = list_entry(pos, struct ipt_pknock_rule, head);
+			rule = list_entry(pos, struct xt_pknock_rule, head);
 			
 			if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0)
 				return rule;
@@ -269,15 +269,15 @@ static inline struct ipt_pknock_rule * search_rule(struct ipt_pknock_info *info)
  * @info
  * @return: 1 success, 0 otherwise
  */
-static int add_rule(struct ipt_pknock_info *info) {
-	struct ipt_pknock_rule *rule = NULL;
+static int add_rule(struct xt_pknock_info *info) {
+	struct xt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL;
 	
-	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
+	int hash = pknock_hash(info->rule_name, info->rule_name_len, xt_pknock_hash_rnd, xt_pknock_rule_htable_size);
 
 	if (!list_empty(&rule_hashtable[hash])) {
 		list_for_each(pos, &rule_hashtable[hash]) {
-			rule = list_entry(pos, struct ipt_pknock_rule, head);
+			rule = list_entry(pos, struct xt_pknock_rule, head);
 			// If the rule exists.
 			if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0) {
 				rule->ref_count++;
@@ -290,7 +290,7 @@ static int add_rule(struct ipt_pknock_info *info) {
 		}
 	}
 	// If it doesn't exist.
-	if ((rule = (struct ipt_pknock_rule *)kmalloc(sizeof (*rule), GFP_KERNEL)) == NULL) {
+	if ((rule = (struct xt_pknock_rule *)kmalloc(sizeof (*rule), GFP_KERNEL)) == NULL) {
 		printk(KERN_ERR MOD "kmalloc() error in add_rule() function.\n");
 		return 0;
 	}
@@ -305,10 +305,10 @@ static int add_rule(struct ipt_pknock_info *info) {
 //	rule->timer.function 	= peer_gc;
 //	add_timer(&rule->timer);
 	
-	rule->peer_head = alloc_hashtable(ipt_pknock_peer_htable_size);
+	rule->peer_head = alloc_hashtable(xt_pknock_peer_htable_size);
 	
 	if (!(rule->status_proc = create_proc_read_entry(info->rule_name, 0, 
-	proc_net_ipt_pknock, read_proc, rule))) {
+	proc_net_xt_pknock, read_proc, rule))) {
 		printk(KERN_ERR MOD "create_proc_entry() error in add_rule() function.\n");
 		if (rule) kfree(rule);
 		return 0;
@@ -328,18 +328,18 @@ static int add_rule(struct ipt_pknock_info *info) {
  *
  * @info
  */
-static void remove_rule(struct ipt_pknock_info *info) {
-	struct ipt_pknock_rule *rule = NULL;
+static void remove_rule(struct xt_pknock_info *info) {
+	struct xt_pknock_rule *rule = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 	struct peer *peer = NULL;
 	int i, found = 0;
 
-	int hash = pknock_hash(info->rule_name, info->rule_name_len, ipt_pknock_hash_rnd, ipt_pknock_rule_htable_size);
+	int hash = pknock_hash(info->rule_name, info->rule_name_len, xt_pknock_hash_rnd, xt_pknock_rule_htable_size);
 	
 	if (list_empty(&rule_hashtable[hash])) return;
 
 	list_for_each(pos, &rule_hashtable[hash]) {
-		rule = list_entry(pos, struct ipt_pknock_rule, head);
+		rule = list_entry(pos, struct xt_pknock_rule, head);
 		// If the rule exists.
 		if (strncmp(info->rule_name, rule->rule_name, info->rule_name_len) == 0) {
 			found = 1;
@@ -352,7 +352,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
 		printk(KERN_INFO MOD "(N) rule not found: %s.\n", info->rule_name);
 #endif
 	if (rule != NULL && rule->ref_count == 0) {
-		for (i = 0; i < ipt_pknock_peer_htable_size; i++) {		
+		for (i = 0; i < xt_pknock_peer_htable_size; i++) {		
 			list_for_each_safe(pos, n, &rule->peer_head[i]) {
 				peer = list_entry(pos, struct peer, head);
 				if (peer != NULL) {
@@ -365,7 +365,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
 				}
 			}
 		}
-		if (rule->status_proc) remove_proc_entry(info->rule_name, proc_net_ipt_pknock);
+		if (rule->status_proc) remove_proc_entry(info->rule_name, proc_net_xt_pknock);
 #if DEBUG
 		printk(KERN_INFO MOD "(D) rule deleted: %s.\n", rule->rule_name);
 #endif
@@ -383,7 +383,7 @@ static void remove_rule(struct ipt_pknock_info *info) {
  *
  * @rule
  */
-static inline void update_rule_timer(struct ipt_pknock_rule *rule) {
+static inline void update_rule_timer(struct xt_pknock_rule *rule) {
 	rule->timer.expires = jiffies + msecs_to_jiffies(EXPIRATION_TIME);
 	add_timer(&rule->timer);
 }
@@ -395,14 +395,14 @@ static inline void update_rule_timer(struct ipt_pknock_rule *rule) {
  * @ip
  * @return: peer or NULL
  */
-static inline struct peer * get_peer(struct ipt_pknock_rule *rule, u_int32_t ip) {
+static inline struct peer * get_peer(struct xt_pknock_rule *rule, u_int32_t ip) {
 	struct peer *peer = NULL;
 	struct list_head *pos = NULL, *n = NULL;
 	int hash;
 
 	ip = ntohl(ip);
 	
-	hash = pknock_hash(&ip, sizeof(u_int32_t), ipt_pknock_hash_rnd, ipt_pknock_peer_htable_size);
+	hash = pknock_hash(&ip, sizeof(u_int32_t), xt_pknock_hash_rnd, xt_pknock_peer_htable_size);
 #if DEBUG
 //	printk(KERN_DEBUG MOD "get_peer() -> hash %d \n", hash);
 #endif				
@@ -447,9 +447,9 @@ static inline struct peer * new_peer(u_int32_t ip, u_int8_t proto) {
  * @peer
  * @rule
  */
-static inline void add_peer(struct peer *peer, struct ipt_pknock_rule *rule) {
+static inline void add_peer(struct peer *peer, struct xt_pknock_rule *rule) {
 	int hash = pknock_hash(&peer->ip, sizeof(u_int32_t), 
-			ipt_pknock_hash_rnd, ipt_pknock_peer_htable_size);
+			xt_pknock_hash_rnd, xt_pknock_peer_htable_size);
 #if DEBUG
 	printk(KERN_DEBUG MOD "add_peer() -> hash %d \n", hash);
 #endif				
@@ -483,7 +483,7 @@ static inline void remove_peer(struct peer *peer) {
  * @port
  * @return: 1 if allowed, 0 otherwise
  */
-static int update_peer(struct peer *peer, struct ipt_pknock_info *info, u_int16_t port) {
+static int update_peer(struct peer *peer, struct xt_pknock_info *info, u_int16_t port) {
 	unsigned long time;
 	
 	if (IS_ALLOWED(peer)) {
@@ -554,12 +554,14 @@ static int has_secret(unsigned char *payload, int payload_len) {
 static int match(const struct sk_buff *skb,
 	      const struct net_device *in,
 	      const struct net_device *out,
+	      const struct xt_match *match,
 	      const void *matchinfo,
 	      int offset,
+	      unsigned int protoff,
 	      int *hotdrop) 
 {
-	struct ipt_pknock_info *info = (struct ipt_pknock_info *)matchinfo;
-	struct ipt_pknock_rule *rule = NULL;
+	struct xt_pknock_info *info = (struct xt_pknock_info *)matchinfo;
+	struct xt_pknock_rule *rule = NULL;
 	struct peer *peer = NULL;
 	struct iphdr *iph = skb->nh.iph;
 	int ihl = iph->ihl * 4;
@@ -635,19 +637,20 @@ end:
 }
 
 static int checkentry(const char *tablename,
-			const struct ipt_ip *ip,
+			const void *ip,
+			const struct xt_match *match,
 			void *matchinfo,
 			unsigned int matchinfosize,
 			unsigned int hook_mask) 
 {
-	struct ipt_pknock_info *info = (struct ipt_pknock_info *)matchinfo;
+	struct xt_pknock_info *info = (struct xt_pknock_info *)matchinfo;
 	
 	if (matchinfosize != IPT_ALIGN(sizeof (*info)))
 		return 0;
 
 	if (!rule_hashtable) {
-		rule_hashtable = alloc_hashtable(ipt_pknock_rule_htable_size);
-		get_random_bytes(&ipt_pknock_hash_rnd, sizeof(u32));
+		rule_hashtable = alloc_hashtable(xt_pknock_rule_htable_size);
+		get_random_bytes(&xt_pknock_hash_rnd, sizeof(u32));
 	}
 	
 	if (!add_rule(info)) {
@@ -657,16 +660,16 @@ static int checkentry(const char *tablename,
 	return 1;
 }
 
-static void destroy(void *matchinfo, unsigned int matchinfosize) 
+static void destroy(const struct xt_match *match, void *matchinfo, unsigned int matchinfosize) 
 {
-	struct ipt_pknock_info *info = (void *)matchinfo;
+	struct xt_pknock_info *info = (void *)matchinfo;
 	/* 
 	 * Removes a rule only if it exits and ref_count is equal to 0.
 	 */
 	remove_rule(info);
 }
 
-static struct ipt_match ipt_pknock_match = {
+static struct xt_match xt_pknock_match = {
 	.name 		= "pknock",
 	.match 		= match,
 	.checkentry 	= checkentry,
@@ -682,7 +685,7 @@ static int set_rule_hashsize(const char *val, struct kernel_param *kp) {
 	if (!hashsize)
                 return -EINVAL;
 
-	ipt_pknock_rule_htable_size = hashsize;
+	xt_pknock_rule_htable_size = hashsize;
 				
 	return 0;
 }
@@ -695,31 +698,31 @@ static int set_peer_hashsize(const char *val, struct kernel_param *kp) {
 	if (!hashsize)
                 return -EINVAL;
 
-	ipt_pknock_peer_htable_size = hashsize;
+	xt_pknock_peer_htable_size = hashsize;
 				
 	return 0;
 }	
 
-module_param_call(rule_hashsize, set_rule_hashsize, param_get_uint, &ipt_pknock_rule_htable_size, 0600);
-module_param_call(peer_hashsize, set_peer_hashsize, param_get_uint, &ipt_pknock_peer_htable_size, 0600);
+module_param_call(rule_hashsize, set_rule_hashsize, param_get_uint, &xt_pknock_rule_htable_size, 0600);
+module_param_call(peer_hashsize, set_peer_hashsize, param_get_uint, &xt_pknock_peer_htable_size, 0600);
 
 
 static int __init init(void) 
 {
 	printk(KERN_INFO MOD "register.\n");
 
-	if (!(proc_net_ipt_pknock = proc_mkdir("ipt_pknock", proc_net))) {
+	if (!(proc_net_xt_pknock = proc_mkdir("xt_pknock", proc_net))) {
 		printk(KERN_ERR MOD "proc_mkdir() error in function init().\n");
 		return -1;
 	}
-	return ipt_register_match(&ipt_pknock_match);
+	return xt_register_match(&xt_pknock_match);
 }
 
 static void __exit fini(void)
 {
 	printk(KERN_INFO MOD "unregister.\n");
-	remove_proc_entry("ipt_pknock", proc_net);
-	ipt_unregister_match(&ipt_pknock_match);
+	remove_proc_entry("xt_pknock", proc_net);
+	xt_unregister_match(&xt_pknock_match);
 }
 
 module_init(init);
