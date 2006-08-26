@@ -15,8 +15,8 @@
 #include <stdlib.h>
 
 #include <iptables.h>
-//#include <linux/netfilter_ipv4/ipt_pknock.h>
-#include "../kernel/ipt_pknock.h"
+//#include <linux/netfilter_ipv4/xt_pknock.h>
+#include "../kernel/xt_pknock.h"
 
 static struct option opts[] = {
 	{ .name = "knockports", .has_arg = 1,	.flag = 0,	.val = 'k' },
@@ -40,7 +40,7 @@ static void help(void) {
  * Se llama al cargarse el módulo. Inicializa el match (se setean
  * valores por defecto y el cacheo de netfilter.
  */
-static void init(struct ipt_entry_match *m, unsigned int *nfcache) {
+static void init(struct xt_entry_match *m, unsigned int *nfcache) {
 	*nfcache |= NFC_UNKNOWN;
 }
 
@@ -64,7 +64,7 @@ static int parse_ports(const char *ports, u_int16_t *port_buf, u_int8_t *count) 
 
 	if ((str = strdup(ports)) == NULL) return 2;
 
-	for (i=0, token = strtok(str, delim); token != NULL && i < IPT_PKNOCK_MAX_PORTS; 
+	for (i=0, token = strtok(str, delim); token != NULL && i < XT_PKNOCK_MAX_PORTS; 
 	token = strtok(NULL, delim), i++, port_buf++) {
 		if (string_to_number(token, 0, 65535, (unsigned int *)port_buf) == -1) {
 			if (str) free(str);
@@ -99,22 +99,22 @@ static int parse_ports(const char *ports, u_int16_t *port_buf, u_int8_t *count) 
  * Es llamada cada vez que se encuentra un argumento.
  *
  * @param integer c - código del argumento
- * @param struct ipt_entry_match *match - contiene los argumentos, es compartida con el espacio de kernel.
+ * @param struct xt_entry_match *match - contiene los argumentos, es compartida con el espacio de kernel.
  *
  * @return integer - 1 if option is found, 0 otherwise
  */
 static int parse(int c, char **argv, int invert, unsigned int *flags, 
-		const struct ipt_entry *entry, 
+		const struct xt_entry *entry, 
 		unsigned int *nfcache, 
-		struct ipt_entry_match **match) {
-	struct ipt_pknock_info *info = (struct ipt_pknock_info *) (*match)->data;
+		struct xt_entry_match **match) {
+	struct xt_pknock_info *info = (struct xt_pknock_info *) (*match)->data;
 	int ret=0;
 
 /*** VERIFICAR en cada opción el inverso (!). */
 	
 	switch (c) {
 	case 'k': /* --knockports */
-		if (*flags & IPT_PKNOCK_KNOCKPORT)
+		if (*flags & XT_PKNOCK_KNOCKPORT)
 			exit_error(PARAMETER_PROBLEM, MOD "Cant't use --knockports twice.\n");
 		
 		if ((ret = parse_ports(optarg, info->port, &(info->count_ports))) != 0) 
@@ -122,38 +122,38 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 #if DEBUG
 		printf("count_ports: %d\n", info->count_ports);
 #endif
-		*flags |= IPT_PKNOCK_KNOCKPORT;
-		info->option |= IPT_PKNOCK_KNOCKPORT;
+		*flags |= XT_PKNOCK_KNOCKPORT;
+		info->option |= XT_PKNOCK_KNOCKPORT;
 		break;
 		
 	case 't': /* --time */
-		if (*flags & IPT_PKNOCK_TIME)
+		if (*flags & XT_PKNOCK_TIME)
 			exit_error(PARAMETER_PROBLEM, MOD "Cant't use --time twice.\n");
 		
 		info->max_time = atoi(optarg);	
 		
-		*flags |= IPT_PKNOCK_TIME;
-		info->option |= IPT_PKNOCK_TIME;
+		*flags |= XT_PKNOCK_TIME;
+		info->option |= XT_PKNOCK_TIME;
 		break;
 		
 	case 'n': /* --name */
-		if (*flags & IPT_PKNOCK_NAME)
+		if (*flags & XT_PKNOCK_NAME)
 			exit_error(PARAMETER_PROBLEM, MOD "Can't use --name twice.\n");
 	
-		strncpy(info->rule_name, optarg, IPT_PKNOCK_MAX_BUF_LEN);		
+		strncpy(info->rule_name, optarg, XT_PKNOCK_MAX_BUF_LEN);		
 		info->rule_name_len = strlen(info->rule_name);
 #if DEBUG
 		printf("info->rule_name: %s\n", info->rule_name);
 #endif
-		*flags |= IPT_PKNOCK_NAME;
-		info->option |= IPT_PKNOCK_NAME;
+		*flags |= XT_PKNOCK_NAME;
+		info->option |= XT_PKNOCK_NAME;
 		break;
 	
 	case 's': /* --secure */
-		if (*flags & IPT_PKNOCK_SECURE)
+		if (*flags & XT_PKNOCK_SECURE)
 			exit_error(PARAMETER_PROBLEM, MOD "Can't use --secure twice.\n");
-		*flags |= IPT_PKNOCK_SECURE;
-		info->option |= IPT_PKNOCK_SECURE;
+		*flags |= XT_PKNOCK_SECURE;
+		info->option |= XT_PKNOCK_SECURE;
 		break;
 
 		
@@ -175,48 +175,48 @@ static void final_check(unsigned int flags) {
 /*
  * Imprime información sobre la regla. Es llamada por "iptables -L".
  */
-static void print(const struct ipt_ip *ip, const struct ipt_entry_match *match, int numeric) {
-	const struct ipt_pknock_info *info = (const struct ipt_pknock_info *)match->data;
+static void print(const struct xt_ip *ip, const struct xt_entry_match *match, int numeric) {
+	const struct xt_pknock_info *info = (const struct xt_pknock_info *)match->data;
 	int i;
 	
 	printf("pknock ");
-	if (info->option & IPT_PKNOCK_KNOCKPORT) {
+	if (info->option & XT_PKNOCK_KNOCKPORT) {
 		printf("knockports ");
 		for (i=0; i<info->count_ports; i++)
 			printf("%s%d", i ? "," : "", info->port[i]);
 		printf(" ");
 	}
-	if (info->option & IPT_PKNOCK_TIME) printf("time %ld ", info->max_time);
-	if (info->option & IPT_PKNOCK_NAME) printf("name %s ", info->rule_name);
-	if (info->option & IPT_PKNOCK_SECURE) printf("secure ");
+	if (info->option & XT_PKNOCK_TIME) printf("time %ld ", info->max_time);
+	if (info->option & XT_PKNOCK_NAME) printf("name %s ", info->rule_name);
+	if (info->option & XT_PKNOCK_SECURE) printf("secure ");
 }
 
 /*
  * Esta función muestra por pantalla todos los argumentos de una regla determinada. Estos 
- * argumentos están almacenados en la estructura ipt_entry_match que identifica a una regla.
+ * argumentos están almacenados en la estructura xt_entry_match que identifica a una regla.
  * Es llamada cuando se usa "iptables-save".
  */
-static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match) {
-	const struct ipt_pknock_info *info = (const struct ipt_pknock_info *)match->data;
+static void save(const struct xt_ip *ip, const struct xt_entry_match *match) {
+	const struct xt_pknock_info *info = (const struct xt_pknock_info *)match->data;
 	int i;
 	
-	if (info->option & IPT_PKNOCK_KNOCKPORT) {
+	if (info->option & XT_PKNOCK_KNOCKPORT) {
 		printf("--knockports ");
 		for (i=0; i<info->count_ports; i++)
 			printf("%s%d", i ? "," : "", info->port[i]);
 		printf(" ");
 	}
-	if (info->option & IPT_PKNOCK_TIME) printf("--time %ld ", info->max_time);
-	if (info->option & IPT_PKNOCK_NAME) printf("--name %s ", info->rule_name);
-	if (info->option & IPT_PKNOCK_NAME) printf("--secure ");
+	if (info->option & XT_PKNOCK_TIME) printf("--time %ld ", info->max_time);
+	if (info->option & XT_PKNOCK_NAME) printf("--name %s ", info->rule_name);
+	if (info->option & XT_PKNOCK_NAME) printf("--secure ");
 }
 
 
 static struct iptables_match pknock = {
 	.name 		= "pknock",
 	.version 	= IPTABLES_VERSION,
-	.size		= IPT_ALIGN(sizeof (struct ipt_pknock_info)),
-	.userspacesize	= IPT_ALIGN(sizeof (struct ipt_pknock_info)),
+	.size		= XT_ALIGN(sizeof (struct xt_pknock_info)),
+	.userspacesize	= XT_ALIGN(sizeof (struct xt_pknock_info)),
 	.help		= &help,
 	.init		= &init,
 	.parse		= &parse,
