@@ -1,7 +1,7 @@
 #!/bin/sh
 
-if [ -z $2 ]; then
-	echo "usage: $0 <opensecret> <closesecret>"
+if [ -z $1 ]; then
+	echo "usage: $0 <opensecret>"
 	exit 1
 fi
 
@@ -10,7 +10,7 @@ fi
 insmod ../kernel/ipt_pknock.ko
 		
 iptables -A INPUT -p udp -m state --state NEW \
-			-m pknock --opensecret $1 --closesecret $2 --knockports 2000 --name SSH -j DROP
+			-m pknock --opensecret $1 --knockports 2000 --name SSH -j DROP
 
 iptables -A INPUT -p tcp -m state --state NEW \
 			-m pknock --checkip --name SSH \

@@ -23,7 +23,6 @@ static struct option opts[] = {
 	{ .name = "time",		.has_arg = 1, 	.flag = 0,	.val = 't' }, /* synonym */
 	{ .name = "name", 		.has_arg = 1, 	.flag = 0, 	.val = 'n' },
 	{ .name = "opensecret", 	.has_arg = 1, 	.flag = 0, 	.val = 'a' },
-	{ .name = "closesecret", 	.has_arg = 1, 	.flag = 0, 	.val = 'z' },
 	{ .name = "strict", 		.has_arg = 0, 	.flag = 0, 	.val = 'x' },
 	{ .name = "checkip", 		.has_arg = 0, 	.flag = 0, 	.val = 'c' },
 	{ .name = "chkip", 		.has_arg = 0, 	.flag = 0, 	.val = 'c' }, /* synonym */
@@ -174,20 +173,6 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 		info->option |= IPT_PKNOCK_OPENSECRET;
 		break;
 
-	case 'z': /* --closesecret */
-		if (*flags & IPT_PKNOCK_CLOSESECRET)
-			exit_error(PARAMETER_PROBLEM, MOD "Can't use --closesecret twice.\n");
-
-		if(invert)
-			exit_error(PARAMETER_PROBLEM, MOD "Can't specify !.\n");
-
-		memset(info->close_secret, 0, IPT_PKNOCK_MAX_PASSWD_LEN);
-		strncpy(info->close_secret, optarg, IPT_PKNOCK_MAX_PASSWD_LEN);	
-		info->close_secret_len = strlen(info->close_secret);
-
-		*flags |= IPT_PKNOCK_CLOSESECRET;
-		info->option |= IPT_PKNOCK_CLOSESECRET;
-		break;
 	
 	case 'c': /* --checkip */
 		if (*flags & IPT_PKNOCK_CHECKIP)
@@ -231,17 +216,11 @@ static void final_check(unsigned int flags) {
 	if (flags & IPT_PKNOCK_KNOCKPORT) {
 		if (flags & IPT_PKNOCK_CHECKIP)
 			exit_error(PARAMETER_PROBLEM, MOD "Can't specify --knockports with --checkip.\n");
-		if ((flags & IPT_PKNOCK_OPENSECRET) && !(flags & IPT_PKNOCK_CLOSESECRET))
-			exit_error(PARAMETER_PROBLEM, MOD "--opensecret must go with --closesecret.\n");
-		if ((flags & IPT_PKNOCK_CLOSESECRET) && !(flags & IPT_PKNOCK_OPENSECRET))
-			exit_error(PARAMETER_PROBLEM, MOD "--closesecret must go with --opensecret.\n");
 	}
 
 	if (flags & IPT_PKNOCK_CHECKIP) {
 		if (flags & IPT_PKNOCK_KNOCKPORT)
 			exit_error(PARAMETER_PROBLEM, MOD "Can't specify --checkip with --knockports.\n");
-		if ((flags & IPT_PKNOCK_OPENSECRET) || (flags & IPT_PKNOCK_CLOSESECRET))
-			exit_error(PARAMETER_PROBLEM, MOD "Can't specify --opensecret and --closesecret with --checkip.\n");
 		if (flags & IPT_PKNOCK_TIME)
 			exit_error(PARAMETER_PROBLEM, MOD "Can't specify --time with --checkip.\n");
 	}
@@ -264,7 +243,6 @@ static void print(const struct ipt_ip *ip, const struct ipt_entry_match *match, 
 	if (info->option & IPT_PKNOCK_TIME) printf("time %ld ", info->max_time);
 	if (info->option & IPT_PKNOCK_NAME) printf("name %s ", info->rule_name);
 	if (info->option & IPT_PKNOCK_OPENSECRET) printf("opensecret ");
-	if (info->option & IPT_PKNOCK_CLOSESECRET) printf("closesecret ");
 }
 
 /*
@@ -285,7 +263,6 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match) {
 	if (info->option & IPT_PKNOCK_TIME) printf("--time %ld ", info->max_time);
 	if (info->option & IPT_PKNOCK_NAME) printf("--name %s ", info->rule_name);
 	if (info->option & IPT_PKNOCK_OPENSECRET) printf("--opensecret ");
-	if (info->option & IPT_PKNOCK_CLOSESECRET) printf("--closesecret ");
 	if (info->option & IPT_PKNOCK_STRICT) printf("--strict ");
 	if (info->option & IPT_PKNOCK_CHECKIP) printf("--checkip ");
 }

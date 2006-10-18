@@ -1,10 +1,9 @@
 ###### LOAD WITH OPENSECRET! ######
 OPENSECRET="whatasecret"
-CLOSESECRET="theclosesecret"
 
 load
 
-rule_only "SSH" "2000,2001" "22" "--opensecret $OPENSECRET --closesecret $CLOSESECRET"
+rule_only "SSH" "2000,2001" "22" "--opensecret $OPENSECRET"
 expect "SSH,(A)" 
 
 knock_udp "11.10.0.1" "22"  
@@ -37,13 +36,10 @@ knock_udp "11.10.0.1" "2001"
 expect "ALLOWED"
 knock_udp "11.10.0.1" "22"
 expect "PASS OK"
-knock_udp "11.10.0.1" "22"
-expect "PASS OK"
 
-# close door
-set_hmac $CLOSESECRET "11.10.0.1" 
-knock_udp "11.10.0.1" "9999" # send to any port!
-expect "RESET"
+# verify the auto-close
+knock_udp "11.10.0.1" "22"
+expect "!PASS OK"
 
 # verify it is closed
 knock_udp "11.10.0.1" "2000"

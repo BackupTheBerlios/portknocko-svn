@@ -772,26 +772,6 @@ static int update_peer(struct peer *peer, struct ipt_pknock_info *info, struct i
 	return 0;
 }
 
-
-/**
- * Make the peer no more ALLOWED sending a payload with a special secret for closure
- *
- * @peer
- * @info
- * @payload
- * @payload_len
- * @return: 1 if close knock, 0 otherwise
- */
-static int is_close_knock(struct peer *peer, struct ipt_pknock_info *info, unsigned char *payload, int payload_len) {
-        /* Check for CLOSE secret. */
-	if (has_secret(info->close_secret, info->close_secret_len, htonl(peer->ip), payload, payload_len)) {
-        	DEBUG_MSG("RESET", peer);
-		return 1;
-	}
-	return 0;
-}
-
-
 static int match(const struct sk_buff *skb,
 		const struct net_device *in,
 		const struct net_device *out,
@@ -838,35 +818,24 @@ static int match(const struct sk_buff *skb,
 	/* Gives the peer matching status added to rule depending on ip source. */
 	peer = get_peer(rule, iph->saddr);
 
-	if (info->option & IPT_PKNOCK_CHECKIP) {
-		ret = is_allowed(peer);
+	if ((ret = is_allowed(peer))) {
+		/* just allow one connection after a correct knock */
+		reset_knock_status(peer);
 		goto end;
 	}
-
+	
 	payload = (void *)iph + headers_len;
 	payload_len = skb->len - headers_len;
     
-	/* Sets, updates, removes or checks the peer matching status. */
-	if (info->option & IPT_PKNOCK_KNOCKPORT) {
-		if ((ret = is_allowed(peer))) {
-			if (info->option & IPT_PKNOCK_CLOSESECRET) {
-		                if (is_close_knock(peer, info, payload, payload_len)) {
-                    			reset_knock_status(peer);
-					ret = 0;
-				}
-			}            
-			goto end;
-		}
-		
-		if (is_first_knock(peer, info, port)) {
-			peer = new_peer(iph->saddr, proto);
-			add_peer(peer, rule);
-		}
-        
-		if (peer == NULL) goto end;
-        
-		update_peer(peer, info, rule, port, payload, payload_len);
+	if (is_first_knock(peer, info, port)) {
+		peer = new_peer(iph->saddr, proto);
+		add_peer(peer, rule);
 	}
+    
+	if (peer == NULL) 
+		goto end;
+    
+	update_peer(peer, info, rule, port, payload, payload_len);
 
 end:
 #if DEBUG
@@ -907,28 +876,13 @@ static int checkentry(const char *tablename,
 	if (info->option & IPT_PKNOCK_KNOCKPORT) {
 		if (info->option & IPT_PKNOCK_CHECKIP)
 			printk(KERN_ERR MOD "Can't specify --knockports with --checkip.\n");
-		if ((info->option & IPT_PKNOCK_OPENSECRET) && !(info->option & IPT_PKNOCK_CLOSESECRET))
-			printk(KERN_ERR MOD "--opensecret must go with --closesecret.\n");
-		if ((info->option & IPT_PKNOCK_CLOSESECRET) && !(info->option & IPT_PKNOCK_OPENSECRET))
-			printk(KERN_ERR MOD "--closesecret must go with --opensecret.\n");
 	}
 
 	if (info->option & IPT_PKNOCK_CHECKIP) {
 		if (info->option & IPT_PKNOCK_KNOCKPORT)
 			printk(KERN_ERR MOD "Can't specify --checkip with --knockports.\n");
-		if ((info->option & IPT_PKNOCK_OPENSECRET) || (info->option & IPT_PKNOCK_CLOSESECRET))
-			printk(KERN_ERR MOD "Can't specify --opensecret and --closesecret with --checkip.\n");
 		if (info->option & IPT_PKNOCK_TIME)
 			printk(KERN_ERR MOD "Can't specify --time with --checkip.\n");
-	}
-
-	if (info->option & IPT_PKNOCK_OPENSECRET) {
-		if (info->open_secret_len == info->close_secret_len) {
-			if (memcmp(info->open_secret, info->close_secret, info->open_secret_len) == 0) {
-				printk(KERN_ERR MOD "opensecret & closesecret cannot be equal.\n");
-				return 0;
-			}
-		}
 	}
 	
 	return 1;
