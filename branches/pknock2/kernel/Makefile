@@ -1,13 +1,14 @@
-KERNEL_DIR=/usr/src/linux-$(shell uname -r)
+#KERNEL_DIR=/usr/src/linux-$(shell uname -r)
+KERNEL_DIR=/usr/src/kernels/2.6.18-1.2798.fc6-i686
 
-TARGET=ipt_pknock.o
+TARGET=xt_pknock.o
 
 obj-m:=$(TARGET)
-ipt_pknock-objs:=$(OBJS)
+xt_pknock-objs:=$(OBJS)
 TARGETS := $(obj-m:.o=.ko)
 
 DESTDIR_ROOT:=/lib/modules/$(shell uname -r)
-DESTDIR:=$(DESTDIR_ROOT)/kernel/net/ipv4/netfilter
+DESTDIR:=$(DESTDIR_ROOT)/kernel/net/netfilter
 
 all:		
 	$(MAKE) -C $(KERNEL_DIR) SUBDIRS=$$PWD modules
