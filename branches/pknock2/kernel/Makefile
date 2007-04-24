@@ -1,5 +1,5 @@
 #KERNEL_DIR=/usr/src/linux-$(shell uname -r)
-KERNEL_DIR=/usr/src/kernels/2.6.18-1.2798.fc6-i686
+KERNEL_DIR=/usr/src/linux
 
 TARGET=xt_pknock.o
 
