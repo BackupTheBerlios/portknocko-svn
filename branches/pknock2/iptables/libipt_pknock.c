@@ -14,8 +14,9 @@
 #include <stdlib.h>
 
 #include <iptables.h>
-//#include <linux/netfilter_ipv4/xt_pknock.h>
+/* To ensure that iptables compiles with an old kernel */
 #include "../kernel/ipt_pknock.h"
+//#include <linux/netfilter_ipv4/ipt_pknock.h>
 
 static struct option opts[] = {
 	{ .name = "knockports", 	.has_arg = 1,	.flag = 0,	.val = 'k' },
