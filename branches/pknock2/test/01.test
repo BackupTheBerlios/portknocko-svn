@@ -1,0 +1,97 @@
+#### loading module ####
+load
+expect "register"
+########################
+
+#### typical example ####
+rule_only "SSH" "2000,2001" "22"
+expect "SSH,(A)" 
+
+knock_udp "10.10.0.1" "22"
+expect "!PASS OK"
+knock_udp "10.10.0.1" "2000"
+expect "MATCHING"
+knock_udp "10.10.0.1" "2001"
+expect "ALLOWED"
+knock_udp "10.10.0.1" "22"
+expect "PASS OK"
+########################
+
+#### just one port ####
+rule_only "ONE" "20002" "22"
+expect "ONE,(A)" 
+
+knock_udp "133.10.0.1" "22"
+expect "!PASS OK"
+knock_udp "133.10.0.1" "20002"
+expect "ALLOWED"
+knock_udp "133.10.0.1" "22"
+expect "PASS OK"
+########################
+
+#### typical example with a bad start####
+rule_only "SSH2" "8080,8081" "2222"
+expect "SSH2,(A)" 
+
+knock_udp "11.10.0.1" "2222"
+expect "!PASS OK"
+knock_udp "11.10.0.1" "8082"
+expect "!MATCHING"
+knock_udp "11.10.0.1" "8080"
+expect "MATCHING"
+knock_udp "11.10.0.1" "8081"
+expect "ALLOWED"
+knock_udp "11.10.0.1" "2222"
+expect "PASS OK"
+########################
+
+#### typical example with 2 peers ####
+rule_only "HTTP" "2002,2003,2004" "80"
+expect "HTTP,(A)" 
+
+knock_udp "10.10.0.2" "80"
+expect "!PASS OK"
+knock_udp "10.10.0.2" "2002"
+expect "MATCHING"
+knock_udp "10.10.0.2" "2003"
+expect "MATCHING"
+knock_udp "10.10.0.2" "2004"
+expect "ALLOWED"
+knock_udp "10.10.0.3" "2002"
+expect "MATCHING"
+knock_udp "10.10.0.3" "2003"
+expect "MATCHING"
+knock_udp "10.10.0.3" "2004"
+expect "ALLOWED"
+knock_udp "10.10.0.2" "80"
+expect "PASS OK"
+knock_udp "10.10.0.3" "80"
+expect "PASS OK"
+########################
+
+#### big example ####
+rule_only "BIG" "4000,4001,4002,4003,4004" "80"
+expect "BIG,(A)"
+
+knock_udp "10.10.0.20" "80"
+expect "!PASS OK"
+knock_udp "10.10.0.20" "4000"
+expect "MATCHING"
+knock_udp "10.10.0.20" "4001"
+expect "MATCHING"
+knock_udp "10.10.0.20" "4002"
+expect "MATCHING"
+knock_udp "10.10.0.20" "4003"
+expect "MATCHING"
+knock_udp "10.10.0.20" "4004"
+expect "ALLOWED"
+knock_udp "10.10.0.20" "80"
+expect "PASS OK"
+########################
+
+#### unloading module ####
+unload
+expect "unregister"
+########################
+
+# VERIFICAR QUE TODOS LOS PEERS Y REGLAS FUERON BORRADOS!
