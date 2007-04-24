@@ -2,7 +2,7 @@
  * Shared library add-on to iptables to add port knocking matching support.
  *
  * (C) 2006 J. Federico Hernandez <fede.hernandez@gmail.com>
- * (C) 2006 Luis Floreani <luis.floreani@gmail.com>
+ * (C) 2006 Luis A. Floreani <luis.floreani@gmail.com>
  *
  * $Id$
  *
@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #include <iptables.h>
-//#include <linux/netfilter_ipv4/ipt_pknock.h>
+//#include <linux/netfilter_ipv4/xt_pknock.h>
 #include "../kernel/ipt_pknock.h"
 
 static struct option opts[] = {
@@ -30,7 +30,8 @@ static struct option opts[] = {
 	{ .name = 0 }
 };
 
-static void help(void) {
+static void help(void) 
+{
 	printf("Port Knocking match v%s options:\n"
 		" --knockports port[,port,port,...] 	Matches destination port(s).\n"
 		" --time seconds\n"
@@ -43,12 +44,8 @@ static void help(void) {
 		IPTABLES_VERSION);
 }
 
-/*
- * Se llama al cargarse el módulo. Inicializa el match (se setean
- * valores por defecto y el cacheo de netfilter.
- */
-static void init(struct ipt_entry_match *m, unsigned int *nfcache) {
-	*nfcache |= NFC_UNKNOWN;
+static void init(struct ipt_entry_match *m, unsigned int *nfcache) 
+{
 }
 
 /**
@@ -60,7 +57,8 @@ static void init(struct ipt_entry_match *m, unsigned int *nfcache) {
  * @count: count ports
  * @return: 0 success, > 0 otherwise
  */
-static int parse_ports(const char *ports, u_int16_t *port_buf, u_int8_t *count) {
+static int parse_ports(const char *ports, u_int16_t *port_buf, u_int8_t *count) 
+{
 	char *token=NULL, *str=NULL;
 	const char *delim = ",";
 	int i;
@@ -97,20 +95,16 @@ static int parse_ports(const char *ports, u_int16_t *port_buf, u_int8_t *count) 
 	exit(EXIT_FAILURE);								\
 } while (0)										\
 
-/**
- * Parsea la línea de comandos. Devuelve true si encuentra una opción.
- * Es llamada cada vez que se encuentra un argumento.
- *
- * @c: código del argumento
- * @match
- * @return: 1 if option is found, 0 otherwise
- */
-static int parse(int c, char **argv, int invert, unsigned int *flags, 
+static int parse(int c, char **argv, int invert, 
+		unsigned int *flags, 
 		const struct ipt_entry *entry, 
 		unsigned int *nfcache, 
-		struct ipt_entry_match **match) {
-	struct ipt_pknock_info *info = (struct ipt_pknock_info *) (*match)->data;
+		struct ipt_entry_match **match) 
+{
+	struct ipt_pknock_info *info = NULL;
 	int ret=0;
+
+	info = (struct ipt_pknock_info *) (*match)->data;
 
 	switch (c) {
 	case 'k': /* --knockports */	
@@ -217,11 +211,8 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 	return 1;
 }
 
-/*
- * Esta función da una última oportunidad de verificar las reglas. Es llamada después
- * del parseo de los argumentos.
- */
-static void final_check(unsigned int flags) { 
+static void final_check(unsigned int flags) 
+{ 
 	if (!flags)
 		exit_error(PARAMETER_PROBLEM, MOD "You must specify an option.\n");
 		
@@ -247,13 +238,15 @@ static void final_check(unsigned int flags) {
 	}
 }
 
-/*
- * Imprime información sobre la regla. Es llamada por "iptables -L".
- */
-static void print(const struct ipt_ip *ip, const struct ipt_entry_match *match, int numeric) {
-	const struct ipt_pknock_info *info = (const struct ipt_pknock_info *)match->data;
+static void print(const struct ipt_ip *ip, 
+		const struct ipt_entry_match *match, 
+		int numeric) 
+{
+	const struct ipt_pknock_info *info = NULL;
 	int i;
 	
+	info = (const struct ipt_pknock_info *)match->data;
+
 	printf("pknock ");
 	if (info->option & IPT_PKNOCK_KNOCKPORT) {
 		printf("knockports ");
@@ -267,15 +260,13 @@ static void print(const struct ipt_ip *ip, const struct ipt_entry_match *match, 
 	if (info->option & IPT_PKNOCK_CLOSESECRET) printf("closesecret ");
 }
 
-/*
- * Esta función muestra por pantalla todos los argumentos de una regla determinada. Estos 
- * argumentos están almacenados en la estructura ipt_entry_match que identifica a una regla.
- * Es llamada cuando se usa "iptables-save".
- */
-static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match) {
-	const struct ipt_pknock_info *info = (const struct ipt_pknock_info *)match->data;
+static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match) 
+{
+	const struct ipt_pknock_info *info = NULL;
 	int i;
 	
+	info = (const struct ipt_pknock_info *)match->data;
+
 	if (info->option & IPT_PKNOCK_KNOCKPORT) {
 		printf("--knockports ");
 		for (i=0; i<info->count_ports; i++)
