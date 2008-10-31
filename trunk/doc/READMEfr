@@ -1,0 +1,183 @@
+PORTKNOCKO PROJECT
+==================
+
+Le projet PortKnockO est composé de deux parties: un module iptables (en 
+espace utilisateur) et un module Netfilter (en espace noyau). Le premier 
+est une extension iptables et l'autre est une extension Netfilter.
+
+Les deux modules sont utilisés pour implémenter le Port Knocking, un système 
+d'authentification furtil permettant d'ouvrir des ports fermés. Ce système 
+peut par exemple être utilisé pour éviter les attaques brute-force sur les 
+services ssh et ftp.
+
+Ces modules implémentent aussi SPA (Authentification par paquet unique).
+
+
+INSTALLATION
+------------
+
+Accès subversion anonyme par SVN:
+---------------------------------------------------
+svn checkout svn://svn.berlios.de/portknocko/trunk 
+---------------------------------------------------
+
+-------------------------------------
+# cd portknocko
+# ~/portknocko/cd iptables
+# ~/portknocko/iptables/make clean
+# ~/portknocko/iptables/make
+# ~/portknocko/iptables/make install
+
+# cd ../kernel
+# ~/portknocko/kernel/make clean
+# ~/portknocko/kernel/make
+# ~/portknocko/kernel/make install
+
+# depmod -Ae
+------------------------------------
+
+[icons=None, caption="Note"]
+NOTE: Si vous utilisez: "insmod ./ipt_pknock.ko", alors vous devez tout d'abord 
+lancer "modprobe cn" pour charger le connecteur netlink.
+
+
+USAGE:
+------
+
+L'objectif de cette section est de montrer différentes possibilités d'utilisation du module:
+
+1) "La méthode simple", portknocking en une règle:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------------------
+# iptables -P INPUT DROP
+# iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# iptables -A INPUT -p tcp -m state --state NEW 
+	-m pknock --knockports 2002,2001,2004 --name SSH 
+	-m tcp --dport 22 -j ACCEPT
+--------------------------------------------------------------------
+
+----------------------------------------
+$ telnet yourserver 2002 # first knock
+$ telnet yourserver 2001
+$ telnet yourserver 2004 # last knock
+
+$ ssh user@yourserver
+----------------------------------------
+
+[icons=None, caption="Note"]
+NOTE: Tous les toc and le trafic doit être du TCP.
+
+
+options:
+--------
+
+--------------------------------------------------------------------
+[--time seconds]	-> temps maximum entre deux toc.
+[--strict] 		-> si l'utilisateur échoue sur un des toc 
+			durant la séquence, il doit recommencer.
+--------------------------------------------------------------------	
+
+2) "La méthode SPA", authentification hmac avec deux règles iptables:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Il est possible de parvenir à une méthode non-rejouable et non-spoofable.
+
+-----------------------------------------------------------------------------
+# iptables -P INPUT DROP
+# iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# iptables -A INPUT -p udp -m state --state NEW 
+	-m pknock --knockports 2000 --name SSH
+	--opensecret your_opensecret --closesecret your_closesecret 
+	-j DROP
+# iptables -A INPUT -p tcp -m state --state NEW 
+	-m pknock --checkip --name SSH -m tcp --dport 22 -j ACCEPT
+-------------------------------------------------------------------------------
+
+Avec cette méthode, vous devez envoyer un toc grâce à un paquet UDP dont le payload 
+contient le digest sha256 hmac:
+
+	sha256_mac(your_opensecret, your_ip, epoch_min)
+
+[icons=None, caption="Note"]
+NOTE: "epoch_min" est la valeur en minutes depuis le 1er janvier 1970, vous devez donc
+maintenir synchronisée votre horloge système. Vous pouvez le faire comme suit:
+
+---------------------------------------------------------------------------	
+# rdate time-a.nist.gov 	# ceci fixera l'heure système
+# /sbin/hwclock --systohc --utc # paramètre en UTC l'horloge système
+---------------------------------------------------------------------------
+
+Après que le toc ait été accepté, vous pouvez initier un trafic à travers le port 22. 
+Quand vous avez fini, fermez la porte (voir exemple si dessous) pour éviter que d'autres 
+puissent arriver après vous et utiliser la même IP pour se connecter.
+
+Nous fournissons un client permettant de réaliser le toc SPA:
+
+------------------------------------------------------
+# cd test
+# util/knock.sh <IP src> <PORT dst> <secret> <IP dst>
+------------------------------------------------------
+
+[icons=None, caption="Note"]
+NOTE: Vous devez avoir installé python-crypto.
+
+e.g: 
+-------------------------------------------------
+# ~/util/knock.sh 192.168.0.1 2000 your_opensecret
+-------------------------------------------------
+
+Après utilisation vous pouvez "fermer la porte":
+
+e.g: 
+--------------------------------------------------
+# ~/util/knock.sh 192.168.0.1 2000 your_closesecret
+--------------------------------------------------
+
+[icons=None, caption="Note"]
+NOTE: Rappelez vous que ce sont des mots de passe à usage unique, vous ne pouvez donc 
+pas réutiliser le même hmac. Par conséquent, il est seulement possible de toquer une 
+fois par minute (à cause de epoch_min).
+
+Si jamais vous êtes NATé, remplacez simplement <src IP> par l'adresse IP NATé.
+
+Le protocole de sécurité utilisé dans ce module est basé sur l'implémentation en espace
+utilisateur appelée Tumbler : http://tumbler.sourceforge.net/
+
+
+COMUNICATION AVEC L'ESPACE UTILISATEUR:
+---------------------------------------
+
+Dans les autres implémentations du port knocking, il y a un serveur qui observe périodiquement
+les journaux du pare-feu pour trouver la séquence de ports correctes. Quand il la trouve il
+ajoute habituellement une règle iptabels.
+
+Une possibilité interessante pourrait être d'avoir un serveur qui écoute simplement
+et reçoit un message quand quelque chose d'intéressant se produit. Si cela était possible,
+cela simplifierait l'architecture du serveur et serait plus efficace.
+
+Grâce à la socket netlink, le module noyau envoie un message vers l'espace utilisateur à 
+chaque fois qu'une séquence de toc réussit.
+
+Ainsi le serveur écoute en espace utilisateur et quand quelqu'un réussit à jouer une 
+séquence, le server reçoit un message qu'il peut traiter à sa guise: démarrage d'un serveur 
+wen, ajout du pair dans un liste blanche, etc. Tout cela de manière simple et efficace.
+
+Pas à pas:
+
+1) Compilation du module.
+2) Chargement du module : insmod ./ipt_pknock.ko nl_multicast_group=<value>
+3) Lancement du serveur. Une implémentation minimaliste est disponible dans 
+experiments/netlink_broadcast. Elle imprime un message à chaque séquence réussie.
+
+TESTS: (attention, cela écrasera votre jeu de règles iptables)
+--------------------------------------------------------------
+
+Si vous êtes un développeur, vous pouvez lancer le système de tests après avoir 
+modifié le code.
+
+---------------------------------------------
+# ~/portknocko/cd test
+# ~/portknocko/test/./testrunner.sh all.test
+---------------------------------------------
