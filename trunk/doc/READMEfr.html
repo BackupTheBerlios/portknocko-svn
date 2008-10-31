@@ -1,0 +1,500 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.2.2" />
+<style type="text/css">
+/* Debug borders */
+p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
+/*
+  border: 1px solid red;
+*/
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+}
+
+strong {
+  font-weight: bold;
+}
+
+tt {
+  color: navy;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  font-family: sans-serif;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  border-bottom: 2px solid silver;
+  padding-top: 0.5em;
+}
+
+div.sectionbody {
+  font-family: serif;
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+span#author {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+span#email {
+}
+span#revision {
+  font-family: sans-serif;
+}
+
+div#footer {
+  font-family: sans-serif;
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+div#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+div#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+div#preamble,
+div.tableblock, div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-right: 10%;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.5em;
+  margin-bottom: 2.5em;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  font-family: sans-serif;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid silver;
+  padding: 0.5em;
+}
+
+div.listingblock {
+  margin-right: 0%;
+}
+div.listingblock > div.content {
+  border: 1px solid silver;
+  background: #f4f4f4;
+  padding: 0.5em;
+}
+
+div.quoteblock > div.content {
+  padding-left: 2.0em;
+}
+
+div.attribution {
+  text-align: right;
+}
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 2px solid silver;
+}
+
+div.exampleblock > div.content {
+  border-left: 2px solid silver;
+  padding: 0.5em;
+}
+
+div.verseblock div.content {
+  white-space: pre;
+}
+
+div.imageblock div.content { padding-left: 0; }
+div.imageblock img { border: 1px solid silver; }
+span.image img { border-style: none; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: italic;
+}
+dd > *:first-child {
+  margin-top: 0;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.olist2 {
+  list-style-type: lower-alpha;
+}
+
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead {
+  font-family: sans-serif;
+  font-weight: bold;
+}
+tfoot {
+  font-weight: bold;
+}
+
+div.hlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hlist td {
+  padding-bottom: 5px;
+}
+td.hlist1 {
+  vertical-align: top;
+  font-style: italic;
+  padding-right: 0.8em;
+}
+td.hlist2 {
+  vertical-align: top;
+}
+
+@media print {
+  div#footer-badges { display: none; }
+}
+
+div#toctitle {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+/* Workarounds for IE6's broken and incomplete CSS2. */
+
+div.sidebar-content {
+  background: #ffffee;
+  border: 1px solid silver;
+  padding: 0.5em;
+}
+div.sidebar-title, div.image-title {
+  font-family: sans-serif;
+  font-weight: bold;
+  margin-top: 0.0em;
+  margin-bottom: 0.5em;
+}
+
+div.listingblock div.content {
+  border: 1px solid silver;
+  background: #f4f4f4;
+  padding: 0.5em;
+}
+
+div.quoteblock-content {
+  padding-left: 2.0em;
+}
+
+div.exampleblock-content {
+  border-left: 2px solid silver;
+  padding-left: 0.5em;
+}
+
+/* IE6 sets dynamically generated links as visited. */
+div#toc a:visited { color: blue; }
+</style>
+<title>PORTKNOCKO PROJECT</title>
+</head>
+<body>
+<div id="header">
+<h1>PORTKNOCKO PROJECT</h1>
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<p>Le projet PortKnockO est composé de deux parties: un module iptables (en
+espace utilisateur) et un module Netfilter (en espace noyau). Le premier
+est une extension iptables et l'autre est une extension Netfilter.</p>
+<p>Les deux modules sont utilisés pour implémenter le Port Knocking, un système
+d'authentification furtil permettant d'ouvrir des ports fermés. Ce système
+peut par exemple être utilisé pour éviter les attaques brute-force sur les
+services ssh et ftp.</p>
+<p>Ces modules implémentent aussi SPA (Authentification par paquet unique).</p>
+</div>
+</div>
+<h2>INSTALLATION</h2>
+<div class="sectionbody">
+<p>Accès subversion anonyme par SVN:</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt>svn checkout svn://svn.berlios.de/portknocko/trunk</tt></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt># cd portknocko
+# ~/portknocko/cd iptables
+# ~/portknocko/iptables/make clean
+# ~/portknocko/iptables/make
+# ~/portknocko/iptables/make install
+
+# cd ../kernel
+# ~/portknocko/kernel/make clean
+# ~/portknocko/kernel/make
+# ~/portknocko/kernel/make install
+
+# depmod -Ae</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Si vous utilisez: "insmod ./ipt_pknock.ko", alors vous devez tout d'abord
+lancer "modprobe cn" pour charger le connecteur netlink.</td>
+</tr></table>
+</div>
+</div>
+<h2>USAGE:</h2>
+<div class="sectionbody">
+<p>L'objectif de cette section est de montrer différentes possibilités d'utilisation du module:</p>
+<h3>1) "La méthode simple", portknocking en une règle:</h3>
+<div class="listingblock">
+<div class="content">
+<pre><tt># iptables -P INPUT DROP
+# iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# iptables -A INPUT -p tcp -m state --state NEW
+        -m pknock --knockports 2002,2001,2004 --name SSH
+        -m tcp --dport 22 -j ACCEPT</tt></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>$ telnet yourserver 2002 # first knock
+$ telnet yourserver 2001
+$ telnet yourserver 2004 # last knock
+
+$ ssh user@yourserver</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Tous les toc and le trafic doit être du TCP.</td>
+</tr></table>
+</div>
+</div>
+<h2>options:</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><tt>[--time seconds]        -&gt; temps maximum entre deux toc.
+[--strict]              -&gt; si l'utilisateur échoue sur un des toc
+                        durant la séquence, il doit recommencer.</tt></pre>
+</div></div>
+<h3>2) "La méthode SPA", authentification hmac avec deux règles iptables:</h3>
+<p>Il est possible de parvenir à une méthode non-rejouable et non-spoofable.</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt># iptables -P INPUT DROP
+# iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# iptables -A INPUT -p udp -m state --state NEW
+        -m pknock --knockports 2000 --name SSH
+        --opensecret your_opensecret --closesecret your_closesecret
+        -j DROP
+# iptables -A INPUT -p tcp -m state --state NEW
+        -m pknock --checkip --name SSH -m tcp --dport 22 -j ACCEPT</tt></pre>
+</div></div>
+<p>Avec cette méthode, vous devez envoyer un toc grâce à un paquet UDP dont le payload
+contient le digest sha256 hmac:</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>sha256_mac(your_opensecret, your_ip, epoch_min)</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">"epoch_min" est la valeur en minutes depuis le 1er janvier 1970, vous devez donc
+maintenir synchronisée votre horloge système. Vous pouvez le faire comme suit:</td>
+</tr></table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre><tt># rdate time-a.nist.gov         # ceci fixera l'heure système
+# /sbin/hwclock --systohc --utc # paramètre en UTC l'horloge système</tt></pre>
+</div></div>
+<p>Après que le toc ait été accepté, vous pouvez initier un trafic à travers le port 22.
+Quand vous avez fini, fermez la porte (voir exemple si dessous) pour éviter que d'autres
+puissent arriver après vous et utiliser la même IP pour se connecter.</p>
+<p>Nous fournissons un client permettant de réaliser le toc SPA:</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt># cd test
+# util/knock.sh &lt;IP src&gt; &lt;PORT dst&gt; &lt;secret&gt; &lt;IP dst&gt;</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Vous devez avoir installé python-crypto.</td>
+</tr></table>
+</div>
+<p>e.g:</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt># ~/util/knock.sh 192.168.0.1 2000 your_opensecret</tt></pre>
+</div></div>
+<p>Après utilisation vous pouvez "fermer la porte":</p>
+<p>e.g:</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt># ~/util/knock.sh 192.168.0.1 2000 your_closesecret</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Rappelez vous que ce sont des mots de passe à usage unique, vous ne pouvez donc
+pas réutiliser le même hmac. Par conséquent, il est seulement possible de toquer une
+fois par minute (à cause de epoch_min).</td>
+</tr></table>
+</div>
+<p>Si jamais vous êtes NATé, remplacez simplement &lt;src IP&gt; par l'adresse IP NATé.</p>
+<p>Le protocole de sécurité utilisé dans ce module est basé sur l'implémentation en espace
+utilisateur appelée Tumbler : http://tumbler.sourceforge.net/</p>
+</div>
+<h2>COMUNICATION AVEC L'ESPACE UTILISATEUR:</h2>
+<div class="sectionbody">
+<p>Dans les autres implémentations du port knocking, il y a un serveur qui observe périodiquement
+les journaux du pare-feu pour trouver la séquence de ports correctes. Quand il la trouve il
+ajoute habituellement une règle iptabels.</p>
+<p>Une possibilité interessante pourrait être d'avoir un serveur qui écoute simplement
+et reçoit un message quand quelque chose d'intéressant se produit. Si cela était possible,
+cela simplifierait l'architecture du serveur et serait plus efficace.</p>
+<p>Grâce à la socket netlink, le module noyau envoie un message vers l'espace utilisateur à
+chaque fois qu'une séquence de toc réussit.</p>
+<p>Ainsi le serveur écoute en espace utilisateur et quand quelqu'un réussit à jouer une
+séquence, le server reçoit un message qu'il peut traiter à sa guise: démarrage d'un serveur
+wen, ajout du pair dans un liste blanche, etc. Tout cela de manière simple et efficace.</p>
+<p>Pas à pas:</p>
+<p>1) Compilation du module.
+2) Chargement du module : insmod ./ipt_pknock.ko nl_multicast_group=&lt;value&gt;
+3) Lancement du serveur. Une implémentation minimaliste est disponible dans
+experiments/netlink_broadcast. Elle imprime un message à chaque séquence réussie.</p>
+</div>
+<h2>TESTS: (attention, cela écrasera votre jeu de règles iptables)</h2>
+<div class="sectionbody">
+<p>Si vous êtes un développeur, vous pouvez lancer le système de tests après avoir
+modifié le code.</p>
+<div class="listingblock">
+<div class="content">
+<pre><tt># ~/portknocko/cd test
+# ~/portknocko/test/./testrunner.sh all.test</tt></pre>
+</div></div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 31-Oct-2008 21:08:58 ARST
+</div>
+</div>
+</body>
+</html>
