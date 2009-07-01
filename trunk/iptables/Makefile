@@ -1,9 +1,13 @@
-KERNEL_DIR_INC=/usr/src/linux
-IPT_LIB_DIR=/lib/iptables/
+#KERNEL_DIR_INC=/usr/src/linux
+KERNEL_DIR_INC=/usr/src/linux/include
+#IPT_LIB_DIR=/lib/iptables/
+#IPT_LIB_DIR=/lib/xtables/
+#IPT_LIB_DIR=/usr/local/libexec/xtables
+IPT_LIB_DIR=/usr/lib/iptables
 IPTABLES_VERSION=$(shell iptables -V | sed 's/iptables v//')
 
 CC=cc
-LD=cc
+#LD=cc
 CFLAGS=-O2 -Wall -Wunused -I$(KERNEL_DIR_INC) -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\"  -fPIC
 LDFLAGS=-shared
 
