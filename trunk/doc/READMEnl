@@ -1,9 +1,13 @@
 PORTKNOCKO PROJECT
 ==================
 
-Het PortKnockO Project bestaat uit twee delen: een iptables module (gebruikers ruimte) en een netfilter module (kern ruimte). De eerste is een uitbreiding op iptables, de tweede is een uitbreiding op netfilter.
+Het PortKnockO Project bestaat uit twee delen: een uitbreiding op iptables (gebruikers ruimte) en 
+een uitbreiding op netfilter (kern ruimte). 
 
-Beide modules worden gebruikt om Port Knocking te implementeren, een uitgekookt netwerk authorisatie systeem voor netwerk authenticatie met behulp van gesloten porten. Dit systeem kan bijvoorbeeld gebruikt worden om "brute force" aanvallen op ssh of ftp diensten te voorkomen.
+Beide modules worden gebruikt om Port Knocking te implementeren, een uitgekookt netwerk 
+authorisatie systeem voor netwerk authenticatie met behulp van gesloten porten. Dit 
+systeem kan bijvoorbeeld gebruikt worden om "brute force" aanvallen op ssh of ftp diensten te 
+voorkomen.
 
 Het implementeert ook SPA (Simple Packet Authentication).
 

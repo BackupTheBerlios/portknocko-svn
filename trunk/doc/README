@@ -1,9 +1,8 @@
 PORTKNOCKO PROJECT
 ==================
 
-The PortKnockO Project is composed of two parts: an iptables module 
-(user space) and a netfilter module (kernel space). The first one 
-is an iptables extension, and the other one is a netfilter extension.
+The PortKnockO Project is composed of two parts: an iptables extension 
+(user space) and a netfilter extension (kernel space). 
 
 Both modules are used to implement Port Knocking, a stealthy system 
 for network authentication across closed ports. For instance, this 

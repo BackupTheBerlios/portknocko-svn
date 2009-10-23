@@ -1,9 +1,8 @@
 PORTKNOCKO PROJECT
 ==================
 
-Le projet PortKnockO est composé de deux parties: un module iptables (en 
-espace utilisateur) et un module Netfilter (en espace noyau). Le premier 
-est une extension iptables et l'autre est une extension Netfilter.
+Le projet PortKnockO est composé de deux parties: une extension iptables (en 
+espace utilisateur) et une extension Netfilter (en espace noyau). 
 
 Les deux modules sont utilisés pour implémenter le Port Knocking, un système 
 d'authentification furtil permettant d'ouvrir des ports fermés. Ce système 
