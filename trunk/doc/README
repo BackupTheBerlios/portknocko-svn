@@ -8,13 +8,13 @@ Both modules are used to implement Port Knocking, a stealthy system
 for network authentication across closed ports. For instance, this 
 can be used to avoid brute force attacks to ssh or ftp services.
 
-They are also implement SPA (Simple Packet Authentication).
+They also implement SPA (Simple Packet Authentication).
 
 
 INSTALLATION
 ------------
 
-Anonymous SVN Access via SVN:
+Anonymous access via SVN:
 ---------------------------------------------------
 svn checkout svn://svn.berlios.de/portknocko/trunk 
 ---------------------------------------------------
